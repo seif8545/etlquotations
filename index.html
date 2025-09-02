@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Quotation Builder (Client-Only)</title>
+  <title>Quotation Builder (Client-Only) — Styled, preserves template</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; }
@@ -37,7 +37,9 @@
     .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; }
     .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#333; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Use xlsx-style which supports cell styles (keeps template formatting and allows us to set styles) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -57,7 +59,7 @@
         <div class="card">
           <h3>Upload Excel (.xlsx)</h3>
           <input type="file" id="upload" accept=".xlsx" />
-          <div class="hint">This is your base file. We’ll write into the <b>first worksheet</b> (same as EPPlus).</div>
+          <div class="hint">This is your base file. We’ll write into the <b>first worksheet</b> (same as EPPlus). Formatting will be preserved.</div>
         </div>
         <div class="card">
           <h3>Quotation Info</h3>
@@ -272,7 +274,7 @@
   <script>
     // ---------- State (Session-like) ----------
     const appState = {
-      workbook: null, // SheetJS workbook
+      workbook: null, // SheetJS workbook (xlsx-style)
       quotationName: "",
       // Step1:
       flightTicket: "",
@@ -341,7 +343,7 @@
       Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
       CairoGiza: ["Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
       AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
-      KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
+      KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrama","Meret Amon/Ramses II Statue"],
       Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
       Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
       Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum"],
@@ -406,7 +408,8 @@
       reader.onload = evt=>{
         const data=new Uint8Array(evt.target.result);
         try {
-          appState.workbook = XLSX.read(data, { type:'array' });
+          // use xlsx-style's read (keeps styles in memory)
+          appState.workbook = XLSX.read(data, { type:'array', cellStyles:true });
           alert('Excel uploaded successfully.');
         } catch (err) {
           console.error(err);
@@ -460,18 +463,102 @@
     };
     document.getElementById('back3').onclick = ()=> showStep(3);
 
-    document.getElementById('resetBtn1').onclick = ()=>{
-      if(confirm('Clear all current inputs?')) location.reload();
+    document.getElementById('resetBtn1').onclick = ()=>{ if(confirm('Clear all current inputs?')) location.reload(); };
+
+    // ---------- Styling helpers (for cells we're writing) ----------
+    // We keep template style when present; otherwise we apply these defaults.
+    const styles = {
+      sectionHeader: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "0B3D91" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        fill: { fgColor: { rgb: "EAF2FF" } },
+        border: {
+          top: { style: "thin", color: { rgb: "D0D7E6" } },
+          bottom: { style: "thin", color: { rgb: "D0D7E6" } },
+          left: { style: "thin", color: { rgb: "D0D7E6" } },
+          right: { style: "thin", color: { rgb: "D0D7E6" } }
+        }
+      },
+      normal: {
+        font: { name: "Calibri", sz: 10, bold: false, color: { rgb: "000000" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      },
+      currency: {
+        font: { name: "Calibri", sz: 10, bold: false, color: { rgb: "000000" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E0E0E0" } },
+          bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+          left: { style: "thin", color: { rgb: "E0E0E0" } },
+          right: { style: "thin", color: { rgb: "E0E0E0" } }
+        }
+      },
+      altRow: {
+        fill: { fgColor: { rgb: "FBFBFD" } }
+      }
     };
 
-    // ---------- Excel Write (mirror EPPlus logic) ----------
-    function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
-    function set(ws, addr, value){
-      ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
+    function mergeStyles(existing, defaults){
+      if(!existing) return JSON.parse(JSON.stringify(defaults));
+      // simple merge: keep existing keys, add missing from defaults; for nested objects, merge shallowly.
+      const merged = JSON.parse(JSON.stringify(existing));
+      for(const key in defaults){
+        if(!(key in merged)) merged[key] = defaults[key];
+        else if(typeof defaults[key] === 'object' && defaults[key] !== null){
+          merged[key] = Object.assign({}, defaults[key], merged[key]);
+        }
+      }
+      return merged;
     }
+
+    // ---------- Excel utility set (preserve styles if present; optionally apply defaults) ----------
+    function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
+    function set(ws, addr, value, styleName){
+      // ensure cell object exists
+      if(!ws[addr]) ws[addr] = {};
+      const existingStyle = ws[addr].s ? ws[addr].s : null;
+
+      // set value & type
+      if(typeof value === 'number' || (!isNaN(value) && String(value).trim() !== "" && /^\d+(\.\d+)?$/.test(String(value)))){
+        // If provided a numeric string, treat as number
+        const num = (typeof value === 'number') ? value : Number(value);
+        if(!Number.isFinite(num)) {
+          ws[addr].t = 's';
+          ws[addr].v = String(value);
+        } else {
+          ws[addr].t = 'n';
+          ws[addr].v = num;
+        }
+      } else {
+        ws[addr].t = 's';
+        ws[addr].v = (value === null || value === undefined) ? "" : String(value);
+      }
+
+      // preserve existing style if present; otherwise apply default styleName if provided.
+      if(styleName){
+        if(existingStyle){
+          ws[addr].s = mergeStyles(existingStyle, styles[styleName]);
+        } else {
+          ws[addr].s = JSON.parse(JSON.stringify(styles[styleName]));
+        }
+      } else {
+        // if no styleName and no existing style, apply a reasonable normal style
+        if(!existingStyle){
+          ws[addr].s = JSON.parse(JSON.stringify(styles.normal));
+        } else {
+          ws[addr].s = existingStyle;
+        }
+      }
+
+      // apply currency number format for currency style
+      if(styleName === 'currency'){
+        // Excel format, will show as $ with two decimals. If you use local currency, adjust.
+        ws[addr].z = '$#,##0.00';
+      }
+    }
+
     function ensureRef(ws, minA1, maxA1){
       const dec = r=>XLSX.utils.decode_cell(r);
-      const enc = o=>XLSX.utils.encode_cell(o);
       const min = dec(minA1), max = dec(maxA1);
       const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
       const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
@@ -479,34 +566,53 @@
       ws['!ref'] = XLSX.utils.encode_range({s,e});
     }
 
+    // ---------- Main writer (mirrors your ASPX logic but preserves styling) ----------
     function writeExcelAndDownload(){
       if(!appState.workbook){ alert('No workbook loaded.'); return; }
       const sheetName = appState.workbook.SheetNames[0];
       const ws = appState.workbook.Sheets[sheetName];
 
-      // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
+      // Write Quotation Name to B2 (header area) — keep template formatting if exists, else apply sectionHeader style
+      if(appState.quotationName && appState.quotationName.trim() !== ""){
+        set(ws, 'B2', appState.quotationName, 'sectionHeader');
+      }
+
+      // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40) ---
       let rowF = 10;
       const ft = n(appState.flightTicket);
       if(ft !== null){
-        set(ws, `F${rowF}`, "Flight Ticket");
-        set(ws, `G${rowF}`, ft);
+        set(ws, `F${rowF}`, "Flight Ticket", 'sectionHeader');
+        set(ws, `G${rowF}`, ft, 'currency');
         rowF++;
       }
       for(const item of appState.sites){
         if(rowF > 40) break;
-        set(ws, `F${rowF}`, item);
+        // alternating row fill to look organized
+        const styleName = (rowF % 2 === 0) ? 'altRow' : 'normal';
+        // Use normal styling but merge altRow if required
+        set(ws, `F${rowF}`, item, 'normal');
+        if(styleName === 'altRow'){
+          // merge altRow fill into existing style without overwriting existing formatting
+          ws[`F${rowF}`].s = mergeStyles(ws[`F${rowF}`].s || {}, styles.altRow);
+        }
         rowF++;
       }
 
-      // --- Guide Extras (L/M) exactly like EPPlus
+      // --- Guide Extras (L/M) exactly like EPPlus ---
       const guideTicket = n(appState.guideTicket);
-      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+      if(guideTicket !== null){
+        set(ws, 'L12', "Guide Ticket", 'sectionHeader');
+        set(ws, 'M12', guideTicket, 'currency');
+      }
       const guideAcc = n(appState.guideAccomodation);
-      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+      if(guideAcc !== null){
+        set(ws, 'L13', "GuideAccomodation", 'sectionHeader');
+        set(ws, 'M13', guideAcc, 'currency');
+      }
 
-      // --- Trips Column H, rows 10..40
+      // --- Trips Column H, rows 10..40 ---
       let rowH = 10;
-      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt, 'normal'); rowH++; } };
       const cntApt = n(appState.cairoCounters.apt) || 0;
       for(let i=0;i<cntApt;i++) addH("Cairo apt");
       const cntFd = n(appState.cairoCounters.fd) || 0;
@@ -517,16 +623,16 @@
       // Then each checked item once, in order:
       [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
 
-      // --- Accommodation (FillAccommodationData clone)
+      // --- Accommodation (FillAccommodationData clone) B(row)/C(row) for rows 10..15 ---
       function fillAccommodation(place, nights, price, rowIndex){
         const ni = n(nights) || 0;
         const pi = n(price) || 0;
         if(ni>0 && pi>0){
-          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
-          set(ws, `C${rowIndex}`, ni * pi);
+          set(ws, `B${rowIndex}`, `${ni} nights ${place}`, 'sectionHeader'); // description
+          set(ws, `C${rowIndex}`, ni * pi, 'currency'); // amount
         } else {
-          set(ws, `B${rowIndex}`, "");
-          set(ws, `C${rowIndex}`, "");
+          set(ws, `B${rowIndex}`, "", 'normal');
+          set(ws, `C${rowIndex}`, "", 'normal');
         }
       }
       fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
@@ -536,24 +642,24 @@
       fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
       fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
 
-      // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20
+      // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20 ---
       let currentRowJ = 10, currentRowK = 10;
       function writeMeals(mealCategory, mealsQuantityStr){
         const q = n(mealsQuantityStr);
         if(q && q>0){
-          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
-          set(ws, `K${currentRowK}`, q * n(mealCategory));
+          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`, 'normal');
+          set(ws, `K${currentRowK}`, q * n(mealCategory), 'currency');
           currentRowJ++; currentRowK++;
         }
       }
       mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K like C#
+      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "", 'normal'); // clear unused K like C#
 
       // Ensure sheet ref includes up to M40 (so added cells are visible)
       ensureRef(ws, 'A1', 'M40');
 
-      // Download
-      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+      // Download (use xlsx-style write so cell style objects are preserved)
+      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array', cellStyles:true });
       const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -574,13 +680,16 @@
       appState.trips.Luxor     = getChecked('#cbLuxorTrips');
       appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
+      // ensure we set quotationName from UI (in case user edited after step2)
+      const qn = $('#quotationName') ? $('#quotationName').value.trim() : '';
+      if(qn) appState.quotationName = qn;
+
       writeExcelAndDownload();
     };
 
     // ---------- Also collect Step1/Step4 site lists on navigation back/forward ----------
-    document.getElementById('back1').addEventListener('click', ()=>{
-      // nothing extra, keep state as-is
-    });
+    document.getElementById('back1').addEventListener('click', ()=>{ /* keep state */ });
+
   </script>
 </body>
 </html>
