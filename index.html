@@ -1,74 +1,586 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Quotation Builder</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Quotation Builder (Client-Only)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); }
+    .container { max-width:1100px; margin:32px auto; padding:24px; background:var(--card); border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+    h1 { margin:0 0 12px; font-size:28px; }
+    .sub { color:var(--muted); margin-bottom:24px; }
+    .steps { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:13px; }
+    .step { display:none; }
+    .step.active { display:block; }
+    .grid { display:grid; gap:16px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { padding:16px; border:1px solid #eee; border-radius:12px; background:#fff; }
+    .card h3 { margin:0 0 12px; font-size:16px; }
+    label { display:block; margin:6px 0; }
+    input[type="text"], select { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; }
+    input[type="file"] { padding:10px; border:1px dashed #bbb; border-radius:8px; background:#fafafa; width:100%; }
+    .row { display:flex; gap:12px; align-items:center; }
+    .row > * { flex:1; }
+    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; }
+    button { appearance:none; border:none; background:var(--pri); color:#fff; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#e9ecef; color:#111; }
+    button:hover { background:var(--pri-d); }
+    button.secondary:hover { background:#dde2e6; }
+    .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+    .stack { display:flex; flex-direction:column; gap:8px; }
+    .checks { max-height:260px; overflow:auto; border:1px solid #eee; padding:10px; border-radius:8px; background:#fafafa; }
+    .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; }
+    .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#333; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Quotation Builder</h1>
-    <div id="steps">
+    <div class="sub">Client-side remake of your ASP.NET flow. Upload <b>newbasequotation.xlsx</b>, fill steps, then download.</div>
 
-      <!-- Step 1: Upload -->
-      <div class="step active" id="step1">
-        <h2>Step 1 – Upload Excel & Quotation Info</h2>
-        <input type="file" id="upload" accept=".xlsx"><br>
-        <input type="text" id="quotationName" placeholder="Quotation Name"><br>
-        <input type="text" id="flightTicket" placeholder="Flight Ticket"><br>
-        <h3>Sites</h3>
-        <label><input type="checkbox" value="Pyramids"> Pyramids</label>
-        <label><input type="checkbox" value="Museum"> Museum</label>
-        <label><input type="checkbox" value="Luxor Temple"> Luxor Temple</label>
-        <br>
-        <button onclick="nextStep(2)">Next</button>
-      </div>
+    <div class="steps">
+      <span class="pill">1) Upload & Sites</span>
+      <span class="pill">2) Accommodation</span>
+      <span class="pill">3) Meals & Guides</span>
+      <span class="pill">4) Trips & Export</span>
+    </div>
 
-      <!-- Step 2: Accommodation -->
-      <div class="step" id="step2">
-        <h2>Step 2 – Accommodation</h2>
-        <div id="accommodationForm">
-          <div>
-            <label>Cairo Nights: <input type="number" id="cairoNights"></label>
-            <label>Price: <input type="number" id="cairoPrice"></label>
-          </div>
-          <div>
-            <label>Sharm Nights: <input type="number" id="sharmNights"></label>
-            <label>Price: <input type="number" id="sharmPrice"></label>
-          </div>
-          <div>
-            <label>Luxor Nights: <input type="number" id="luxorNights"></label>
-            <label>Price: <input type="number" id="luxorPrice"></label>
+    <!-- STEP 1 -->
+    <section class="step active" id="step1">
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Upload Excel (.xlsx)</h3>
+          <input type="file" id="upload" accept=".xlsx" />
+          <div class="hint">This is your base file. We’ll write into the <b>first worksheet</b> (same as EPPlus).</div>
+        </div>
+        <div class="card">
+          <h3>Quotation Info</h3>
+          <div class="stack">
+            <label>Quotation Name <input id="quotationName" type="text" placeholder="e.g. Smith Family Tour" /></label>
+            <label>Flight Ticket (number) <input id="flightTicket" type="text" inputmode="numeric" placeholder="e.g. 2" /></label>
           </div>
         </div>
-        <button onclick="prevStep(1)">Back</button>
-        <button onclick="nextStep(3)">Next</button>
       </div>
 
-      <!-- Step 3: Meals -->
-      <div class="step" id="step3">
-        <h2>Step 3 – Meals</h2>
-        <input type="text" id="guideTicket" placeholder="Guide Ticket"><br>
-        <input type="text" id="guideAccommodation" placeholder="Guide Accommodation"><br>
-        <input type="number" id="mealsCount" placeholder="Number of Meals"><br>
-        <button onclick="prevStep(2)">Back</button>
-        <button onclick="nextStep(4)">Next</button>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Pyramids</h3>
+          <div class="checks" id="cbPyramids"></div>
+        </div>
+        <div class="card">
+          <h3>Sakkara</h3>
+          <div class="checks" id="cbSakkara"></div>
+        </div>
       </div>
 
-      <!-- Step 4: Trips + Export -->
-      <div class="step" id="step4">
-        <h2>Step 4 – Trips & Export</h2>
-        <label><input type="checkbox" value="Cairo Tour"> Cairo Tour</label>
-        <label><input type="checkbox" value="Sharm Diving"> Sharm Diving</label>
-        <label><input type="checkbox" value="Aswan Nile"> Aswan Nile</label>
-        <br><br>
-        <button onclick="prevStep(3)">Back</button>
-        <button onclick="generateExcel()">Download Quotation</button>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Cairo/Giza</h3>
+          <div class="checks" id="cbCairoGiza"></div>
+        </div>
+        <div class="card">
+          <h3>Alexandria/Behera</h3>
+          <div class="checks" id="cbAlexBehera"></div>
+        </div>
       </div>
 
-    </div>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Kafr el Sheikh / Sharkia / Minya / Sohag / Qena</h3>
+          <div class="checks" id="cbKafrEtAl"></div>
+        </div>
+        <div class="card">
+          <h3>Luxor</h3>
+          <div class="checks" id="cbLuxor"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Aswan</h3>
+          <div class="checks" id="cbAswan"></div>
+        </div>
+        <div class="card">
+          <h3>Sharm el Sheikh</h3>
+          <div class="checks" id="cbSharm"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="resetBtn1" type="button">Reset</button>
+        <button id="toStep2" type="button">Next → Accommodation</button>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="step" id="step2">
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Cairo/Giza</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsCairoGiza"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceCairoGiza"></select>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Sharm el Sheikh</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsSharm"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceSharm"></select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Luxor</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsLuxor"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceLuxor"></select>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Aswan</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsAswan"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceAswan"></select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Hurghada</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsHurghada"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceHurghada"></select>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Nile Cruise</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsNileCruise"></select>
+            </label>
+            <label>Price/Night ($)
+              <select id="ddlPriceNileCruise"></select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="back1" type="button">← Back</button>
+        <button id="toStep3" type="button">Next → Meals & Guides</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="step" id="step3">
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Guide Ticket</h3>
+          <input id="TextBoxGuideTicket" type="text" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="card">
+          <h3>Guide Accommodation</h3>
+          <input id="TextBoxGuideAccomodation" type="text" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="card">
+          <h3>Meals per Price Tier</h3>
+          <div class="stack" id="mealsSelects"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="back2" type="button">← Back</button>
+        <button id="toStep4" type="button">Next → Trips & Export</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="step" id="step4">
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Cairo/Giza Counters</h3>
+          <label>Cairo apt
+            <select id="Cairoapt"></select>
+          </label>
+          <label>Cairo Full Day
+            <select id="Cairofd"></select>
+          </label>
+          <label>Cairo Night
+            <select id="CairoNight"></select>
+          </label>
+        </div>
+
+        <div class="card">
+          <h3>Cairo/Giza Trips</h3>
+          <div class="checks" id="cbCairoGizaTrips"></div>
+        </div>
+
+        <div class="card">
+          <h3>Sharm Trips</h3>
+          <div class="checks" id="cbSharmTrips"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Luxor Trips</h3>
+          <div class="checks" id="cbLuxorTrips"></div>
+        </div>
+        <div class="card">
+          <h3>Aswan Trips</h3>
+          <div class="checks" id="cbAswanTrips"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="back3" type="button">← Back</button>
+        <button id="downloadBtn" type="button">Download Quotation (.xlsx)</button>
+      </div>
+    </section>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    // ---------- State (Session-like) ----------
+    const appState = {
+      workbook: null, // SheetJS workbook
+      quotationName: "",
+      // Step1:
+      flightTicket: "",
+      sites: [], // from all first page checklists combined
+      // Step2:
+      accommodation: { // nights & price per place
+        "Cairo/Giza": { nights: "0", price: "0" },
+        "Sharm el Sheikh": { nights: "0", price: "0" },
+        "Luxor": { nights: "0", price: "0" },
+        "Aswan": { nights: "0", price: "0" },
+        "Hurghada": { nights: "0", price: "0" },
+        "Nile Cruise": { nights: "0", price: "0" },
+      },
+      // Step3:
+      guideTicket: "",
+      guideAccomodation: "",
+      meals: { // tiers as strings "300"..."2000" -> count "0"-"6"
+        "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0"
+      },
+      // Step4:
+      cairoCounters: { apt:"0", fd:"0", night:"0" },
+      trips: { // checkbox groups
+        "CairoGiza": [],
+        "Sharm": [],
+        "Luxor": [],
+        "Aswan": []
+      }
+    };
+
+    // ---------- Helpers ----------
+    const $ = sel => document.querySelector(sel);
+    function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); }
+    function optionRange(sel, from, to, withZeroValue=true) {
+      sel.innerHTML = "";
+      for (let i=from;i<=to;i++){
+        const opt=document.createElement('option');
+        opt.value=String(i); opt.text=String(i);
+        sel.appendChild(opt);
+      }
+      if (withZeroValue && from!==0) {
+        const zero=document.createElement('option'); zero.value="0"; zero.text="0";
+        sel.insertBefore(zero, sel.firstChild);
+      }
+    }
+    function optionList(sel, arr, includeZero=true){
+      sel.innerHTML="";
+      if (includeZero) { const z=document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
+      arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); });
+    }
+    function renderChecks(container, items){
+      const el=$(container); el.innerHTML="";
+      items.forEach(txt=>{
+        const id = container.slice(1) + "_" + txt.replace(/\W+/g,'_');
+        const lbl=document.createElement('label');
+        const cb = document.createElement('input'); cb.type='checkbox'; cb.value=txt; cb.id=id;
+        const span=document.createElement('span'); span.textContent=" "+txt;
+        lbl.appendChild(cb); lbl.appendChild(span);
+        el.appendChild(lbl);
+      });
+    }
+    function getChecked(container){ return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value); }
+
+    // ---------- Static Data (exact items from your ASPX) ----------
+    const lists = {
+      Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
+      Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
+      CairoGiza: ["Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
+      AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
+      KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
+      Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
+      Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
+      Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum"],
+      // Trips Step 4:
+      CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","On"],
+      SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
+      LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
+      AswanTrips: ["Aswan Station","Aswan apt","Aswan fd","Nubian Museum","Abu Simbel","Nubian Village","Nubian Village Visit"]
+    };
+
+    // ---------- Render dynamic controls ----------
+    renderChecks('#cbPyramids', lists.Pyramids);
+    renderChecks('#cbSakkara', lists.Sakkara);
+    renderChecks('#cbCairoGiza', lists.CairoGiza);
+    renderChecks('#cbAlexBehera', lists.AlexBehera);
+    renderChecks('#cbKafrEtAl', lists.KafrEtAl);
+    renderChecks('#cbLuxor', lists.Luxor);
+    renderChecks('#cbAswan', lists.Aswan);
+    renderChecks('#cbSharm', lists.Sharm);
+
+    renderChecks('#cbCairoGizaTrips', lists.CairoGizaTrips);
+    renderChecks('#cbSharmTrips', lists.SharmTrips);
+    renderChecks('#cbLuxorTrips', lists.LuxorTrips);
+    renderChecks('#cbAswanTrips', lists.AswanTrips);
+
+    // Nights dropdowns: 0..10
+    const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
+    nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
+    // Price dropdowns (copying your ASPX options)
+    const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
+    const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
+
+    function fillPrice(selId, arr){ const el=document.getElementById(selId); el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
+    fillPrice('ddlPriceCairoGiza', price30to150);
+    fillPrice('ddlPriceSharm', price30to150);
+    fillPrice('ddlPriceLuxor', price30to150);
+    fillPrice('ddlPriceAswan', price30to150);
+    fillPrice('ddlPriceHurghada', price30to150);
+    fillPrice('ddlPriceNileCruise', priceNileCruise);
+
+    // Meals dropdowns
+    const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
+    const mealsWrap = document.getElementById('mealsSelects');
+    mealTiers.forEach(tier=>{
+      const row=document.createElement('div'); row.className='row';
+      const lbl=document.createElement('label'); lbl.textContent=`${tier} Meals`;
+      const sel=document.createElement('select'); sel.id='ddlMeals'+tier;
+      optionRange(sel, 0, 6, false);
+      row.appendChild(lbl); row.appendChild(sel);
+      mealsWrap.appendChild(row);
+    });
+
+    // Cairo counters 0..5
+    optionRange(document.getElementById('Cairoapt'), 0, 5, false);
+    optionRange(document.getElementById('Cairofd'), 0, 5, false);
+    optionRange(document.getElementById('CairoNight'), 0, 5, false);
+
+    // ---------- Upload Excel ----------
+    document.getElementById('upload').addEventListener('change', e=>{
+      const file=e.target.files[0]; if(!file) return;
+      const reader=new FileReader();
+      reader.onload = evt=>{
+        const data=new Uint8Array(evt.target.result);
+        try {
+          appState.workbook = XLSX.read(data, { type:'array' });
+          alert('Excel uploaded successfully.');
+        } catch (err) {
+          console.error(err);
+          alert('Failed to read Excel. Ensure it is a valid .xlsx');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // ---------- Navigation ----------
+    document.getElementById('toStep2').onclick = ()=>{
+      if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
+      appState.quotationName = $('#quotationName').value.trim();
+      if(!appState.quotationName){ alert('Please provide a Quotation Name.'); return; }
+      appState.flightTicket = $('#flightTicket').value.trim();
+      // collect all first page sites
+      appState.sites = []
+        .concat(getChecked('#cbPyramids'))
+        .concat(getChecked('#cbSakkara'))
+        .concat(getChecked('#cbCairoGiza'))
+        .concat(getChecked('#cbAlexBehera'))
+        .concat(getChecked('#cbKafrEtAl'))
+        .concat(getChecked('#cbLuxor'))
+        .concat(getChecked('#cbAswan'))
+        .concat(getChecked('#cbSharm'));
+      showStep(2);
+    };
+    document.getElementById('back1').onclick = ()=> showStep(1);
+    document.getElementById('toStep3').onclick = ()=>{
+      // Persist accommodation selections
+      appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
+      appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
+      appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
+      appState.accommodation["Sharm el Sheikh"].price  = $('#ddlPriceSharm').value;
+      appState.accommodation["Luxor"].nights = $('#ddlNightsLuxor').value;
+      appState.accommodation["Luxor"].price  = $('#ddlPriceLuxor').value;
+      appState.accommodation["Aswan"].nights = $('#ddlNightsAswan').value;
+      appState.accommodation["Aswan"].price  = $('#ddlPriceAswan').value;
+      appState.accommodation["Hurghada"].nights = $('#ddlNightsHurghada').value;
+      appState.accommodation["Hurghada"].price  = $('#ddlPriceHurghada').value;
+      appState.accommodation["Nile Cruise"].nights = $('#ddlNightsNileCruise').value;
+      appState.accommodation["Nile Cruise"].price  = $('#ddlPriceNileCruise').value;
+      showStep(3);
+    };
+    document.getElementById('back2').onclick = ()=> showStep(2);
+    document.getElementById('toStep4').onclick = ()=>{
+      appState.guideTicket = $('#TextBoxGuideTicket').value.trim();
+      appState.guideAccomodation = $('#TextBoxGuideAccomodation').value.trim();
+      mealTiers.forEach(tier=> appState.meals[tier] = document.getElementById('ddlMeals'+tier).value );
+      showStep(4);
+    };
+    document.getElementById('back3').onclick = ()=> showStep(3);
+
+    document.getElementById('resetBtn1').onclick = ()=>{
+      if(confirm('Clear all current inputs?')) location.reload();
+    };
+
+    // ---------- Excel Write (mirror EPPlus logic) ----------
+    function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
+    function set(ws, addr, value){
+      ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
+    }
+    function ensureRef(ws, minA1, maxA1){
+      const dec = r=>XLSX.utils.decode_cell(r);
+      const enc = o=>XLSX.utils.encode_cell(o);
+      const min = dec(minA1), max = dec(maxA1);
+      const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
+      const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
+      const e = { c: Math.max(cur.e.c, max.c), r: Math.max(cur.e.r, max.r) };
+      ws['!ref'] = XLSX.utils.encode_range({s,e});
+    }
+
+    function writeExcelAndDownload(){
+      if(!appState.workbook){ alert('No workbook loaded.'); return; }
+      const sheetName = appState.workbook.SheetNames[0];
+      const ws = appState.workbook.Sheets[sheetName];
+
+      // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
+      let rowF = 10;
+      const ft = n(appState.flightTicket);
+      if(ft !== null){
+        set(ws, `F${rowF}`, "Flight Ticket");
+        set(ws, `G${rowF}`, ft);
+        rowF++;
+      }
+      for(const item of appState.sites){
+        if(rowF > 40) break;
+        set(ws, `F${rowF}`, item);
+        rowF++;
+      }
+
+      // --- Guide Extras (L/M) exactly like EPPlus
+      const guideTicket = n(appState.guideTicket);
+      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+      const guideAcc = n(appState.guideAccomodation);
+      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+
+      // --- Trips Column H, rows 10..40
+      let rowH = 10;
+      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+      const cntApt = n(appState.cairoCounters.apt) || 0;
+      for(let i=0;i<cntApt;i++) addH("Cairo apt");
+      const cntFd = n(appState.cairoCounters.fd) || 0;
+      for(let i=0;i<cntFd;i++) addH("Cairo fd");
+      const cntNight = n(appState.cairoCounters.night) || 0;
+      for(let i=0;i<cntNight;i++) addH("Cairo night");
+
+      // Then each checked item once, in order:
+      [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+
+      // --- Accommodation (FillAccommodationData clone)
+      function fillAccommodation(place, nights, price, rowIndex){
+        const ni = n(nights) || 0;
+        const pi = n(price) || 0;
+        if(ni>0 && pi>0){
+          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
+          set(ws, `C${rowIndex}`, ni * pi);
+        } else {
+          set(ws, `B${rowIndex}`, "");
+          set(ws, `C${rowIndex}`, "");
+        }
+      }
+      fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
+      fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
+      fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
+      fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
+      fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
+      fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
+
+      // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20
+      let currentRowJ = 10, currentRowK = 10;
+      function writeMeals(mealCategory, mealsQuantityStr){
+        const q = n(mealsQuantityStr);
+        if(q && q>0){
+          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
+          set(ws, `K${currentRowK}`, q * n(mealCategory));
+          currentRowJ++; currentRowK++;
+        }
+      }
+      mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
+      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K like C#
+
+      // Ensure sheet ref includes up to M40 (so added cells are visible)
+      ensureRef(ws, 'A1', 'M40');
+
+      // Download
+      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+      const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // ---------- Collect Step4 and Download ----------
+    document.getElementById('downloadBtn').onclick = ()=>{
+      // Counters
+      appState.cairoCounters.apt   = document.getElementById('Cairoapt').value;
+      appState.cairoCounters.fd    = document.getElementById('Cairofd').value;
+      appState.cairoCounters.night = document.getElementById('CairoNight').value;
+
+      // Trips
+      appState.trips.CairoGiza = getChecked('#cbCairoGizaTrips');
+      appState.trips.Sharm     = getChecked('#cbSharmTrips');
+      appState.trips.Luxor     = getChecked('#cbLuxorTrips');
+      appState.trips.Aswan     = getChecked('#cbAswanTrips');
+
+      writeExcelAndDownload();
+    };
+
+    // ---------- Also collect Step1/Step4 site lists on navigation back/forward ----------
+    document.getElementById('back1').addEventListener('click', ()=>{
+      // nothing extra, keep state as-is
+    });
+  </script>
 </body>
 </html>
