@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Excel Editor (HTML/JS Only)</title>
+  <!-- SheetJS (XLSX) CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-Lmfd67c1jUNu9Yq6rTJiG2cpc7JovotfS6l3o1jgbO3Ujbxq1qHIDX2r1q3f9H61A5LGQj7X3A5r8O5x8G/67g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #111a2b;
+      --muted: #8aa0bd;
+      --accent: #4da3ff;
+      --ring: #264874;
+      --text: #e7edf7;
+      --ok: #35b26f;
+      --warn: #f7b955;
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 10% -10%, #173154, transparent),
+                  radial-gradient(1000px 500px at 110% 10%, #1b2f4d, transparent), var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 880px; margin: 40px auto; padding: 0 16px }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 20px; box-shadow: 0 10px 35px rgba(0,0,0,0.2);
+      backdrop-filter: blur(6px);
+    }
+    h1 { font-size: 1.6rem; margin: 0 0 12px }
+    p.lead { color: var(--muted); margin-top: 6px }
+    label { display: block; margin: 8px 0; }
+    input[type="file"], select, button, input[type="text"], .checkboxes {
+      width: 100%;
+    }
+    input[type="file"], select, input[type="text"] {
+      padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);
+      background: #0f1829; color: var(--text); outline: none;
+    }
+    input[type="file"]::-webkit-file-upload-button { cursor: pointer }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px }
+    @media (min-width: 720px) { .grid.two { grid-template-columns: 1fr 1fr } }
+
+    fieldset { border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 12px }
+    legend { color: var(--muted); padding: 0 6px; font-size: 0.95rem }
+
+    .row { display: flex; gap: 10px; align-items: center }
+    .row > * { flex: 1 }
+
+    .btn { cursor: pointer; border: 1px solid transparent; border-radius: 12px; padding: 12px 16px; font-weight: 600 }
+    .btn.primary { background: linear-gradient(90deg, #3a7bd5, #00d2ff); color: #07121f }
+    .btn.secondary { background: #0f1829; color: var(--text); border-color: rgba(255,255,255,0.15) }
+    .btn:disabled { opacity: .55; cursor: not-allowed }
+
+    .hint { font-size: .9rem; color: var(--muted) }
+    .pill { display: inline-block; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; font-size: .8rem; color: var(--muted) }
+    .footer { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px }
+    .status { font-size: 0.95rem }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Excel Editor (Client‑Side)</h1>
+      <p class="lead">Upload an Excel file, choose options, and download the edited file. No server needed — works fully in your browser.</p>
+
+      <div class="grid two">
+        <div>
+          <label for="file">Excel file (.xlsx)</label>
+          <input type="file" id="file" accept=".xlsx,.xlsb,.xlsm,.xls" />
+        </div>
+        <div>
+          <label for="sheet">Target sheet</label>
+          <select id="sheet" disabled></select>
+        </div>
+      </div>
+
+      <div style="height:8px"></div>
+
+      <fieldset>
+        <legend>Checklist → Cell Mapping</legend>
+        <div class="hint">Toggle any option to write its <em>value</em> into the specified <em>cell address</em>.
+          You can duplicate these lines and change <code>data-cell</code> and <code>data-value</code>. For dates, add <code>data-type="d"</code>.</div>
+        <div class="checkboxes">
+          <label><input type="checkbox" class="map" data-cell="A1" data-value="Hello world"> Write "Hello world" into <strong>A1</strong></label>
+          <label><input type="checkbox" class="map" data-cell="B2" data-value="123"> Write <strong>123</strong> into <strong>B2</strong></label>
+          <label><input type="checkbox" class="map" data-cell="C3" data-value="2025-01-15" data-type="d"> Write date <strong>2025‑01‑15</strong> into <strong>C3</strong></label>
+        </div>
+      </fieldset>
+
+      <div style="height:8px"></div>
+
+      <div class="grid">
+        <div class="row">
+          <input id="outName" type="text" placeholder="Output filename (optional, e.g., Edited.xlsx)" />
+          <button id="run" class="btn primary" disabled>Process & Download</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span class="status" id="status"><span class="pill">Idle</span> Load a file to begin.</span>
+        <button id="reset" class="btn secondary">Reset</button>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-top:12px">Tip: To add more options, duplicate a checkbox line and set <code>data-cell</code> (e.g., <code>D5</code>) and <code>data-value</code>. Numbers are detected automatically. For dates, add <code>data-type="d"</code> and use <code>YYYY-MM-DD</code>.</p>
+
+    <!--
+      ===== How to Deploy on GitHub Pages =====
+      1) Save this file as index.html in a new repository.
+      2) Commit & push.
+      3) In GitHub → Settings → Pages → set Source to "Deploy from a branch", choose main branch / root.
+      4) Visit: https://<your-username>.github.io/<repo-name>/
+    -->
+  </div>
+
+  <script>
+    (function () {
+      /** @type {XLSX.WorkBook | null} */
+      let workbook = null;
+      let originalName = null;
+
+      const $file = document.getElementById('file');
+      const $sheet = document.getElementById('sheet');
+      const $run = document.getElementById('run');
+      const $reset = document.getElementById('reset');
+      const $status = document.getElementById('status');
+      const $outName = document.getElementById('outName');
+
+      function setStatus(text, tone = 'idle') {
+        const toneMap = { idle: 'pill', ok: 'pill', warn: 'pill' };
+        $status.innerHTML = `<span class="${toneMap[tone]}">${tone === 'ok' ? 'Ready' : tone === 'warn' ? 'Note' : 'Idle'}</span> ${text}`;
+      }
+
+      function clearUI() {
+        $sheet.innerHTML = '';
+        $sheet.disabled = true;
+        $run.disabled = true;
+        workbook = null;
+        originalName = null;
+        $file.value = '';
+        setStatus('Load a file to begin.');
+      }
+
+      function isNumericLike(v) {
+        return /^[-+]?\d+(?:\.\d+)?$/.test(String(v).trim());
+      }
+
+      function parseValueFromDataset(ds) {
+        const type = (ds.type || '').toLowerCase();
+        const raw = ds.value;
+        if (type === 'd') {
+          const d = new Date(raw);
+          if (isNaN(d.getTime())) throw new Error(`Invalid date: ${raw}`);
+          return { v: d, t: 'd' };
+        }
+        if (isNumericLike(raw)) return { v: Number(raw), t: 'n' };
+        return { v: raw, t: 's' };
+      }
+
+      function deriveOutputName(input, custom) {
+        if (custom && custom.trim()) return custom.trim().replace(/\s+/g, '_');
+        if (!input) return 'Edited.xlsx';
+        const dot = input.lastIndexOf('.');
+        const base = dot > 0 ? input.slice(0, dot) : input;
+        return base + '-edited.xlsx';
+      }
+
+      $file.addEventListener('change', (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            originalName = f.name;
+
+            // populate sheet names
+            $sheet.innerHTML = '';
+            workbook.SheetNames.forEach((name, i) => {
+              const opt = document.createElement('option');
+              opt.value = name; opt.textContent = `${i + 1}. ${name}`;
+              $sheet.appendChild(opt);
+            });
+            $sheet.disabled = false;
+            $run.disabled = false;
+            setStatus(`Loaded “${f.name}”. Choose options then click Process & Download.`, 'ok');
+          } catch (err) {
+            console.error(err);
+            setStatus('Failed to read the file. Make sure it is a valid Excel workbook.', 'warn');
+          }
+        };
+        reader.readAsArrayBuffer(f);
+      });
+
+      $run.addEventListener('click', () => {
+        if (!workbook) return alert('Upload an Excel file first.');
+        const sheetName = $sheet.value || workbook.SheetNames[0];
+        const ws = workbook.Sheets[sheetName];
+        if (!ws) return alert('Selected sheet not found.');
+
+        // apply all checked mappings
+        const checks = Array.from(document.querySelectorAll('input.map[type="checkbox"]:checked'));
+        if (!checks.length) {
+          if (!confirm('No options selected. Continue (no changes)?')) return;
+        }
+
+        try {
+          checks.forEach((cb) => {
+            const cell = cb.dataset.cell;
+            if (!cell) return;
+            const { v, t } = parseValueFromDataset(cb.dataset);
+            ws[cell] = { v, t };
+            // Optionally, update the sheet range if needed
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            const addr = XLSX.utils.decode_cell(cell);
+            range.s = { r: Math.min(range.s.r, addr.r), c: Math.min(range.s.c, addr.c) };
+            range.e = { r: Math.max(range.e.r, addr.r), c: Math.max(range.e.c, addr.c) };
+            ws['!ref'] = XLSX.utils.encode_range(range);
+          });
+        } catch (err) {
+          console.error(err);
+          alert('Error applying mappings: ' + err.message);
+          return;
+        }
+
+        const out = deriveOutputName(originalName, $outName.value);
+        XLSX.writeFile(workbook, out);
+        setStatus(`File downloaded as “${out}”.`, 'ok');
+      });
+
+      $reset.addEventListener('click', () => {
+        clearUI();
+      });
+
+      // init
+      clearUI();
+    })();
+  </script>
+</body>
+</html>
