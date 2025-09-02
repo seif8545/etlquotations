@@ -1,152 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Excel Editor (Client-Side)</title>
-  <!-- SheetJS (XLSX) CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <title>Checklist Excel Editor</title>
   <style>
-    :root {
-      --bg: #0b1220; --card: #111a2b; --muted: #8aa0bd; --accent: #4da3ff;
-      --ring: #264874; --text: #e7edf7; --ok: #35b26f; --warn: #f7b955;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f4f4f9;
+      color: #333;
     }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(1200px 600px at 10% -10%,#173154,transparent),radial-gradient(1000px 500px at 110% 10%,#1b2f4d,transparent),var(--bg);color:var(--text);line-height:1.55}
-    .wrap{max-width:880px;margin:40px auto;padding:0 16px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;box-shadow:0 10px 35px rgba(0,0,0,0.2);backdrop-filter:blur(6px)}
-    h1{font-size:1.6rem;margin:0 0 12px} p.lead{color:var(--muted);margin-top:6px}
-    label{display:block;margin:8px 0}
-    input[type=file],select,button,input[type=text],.checkboxes{width:100%}
-    input[type=file],select,input[type=text]{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:#0f1829;color:var(--text);outline:none}
-    input[type=file]::-webkit-file-upload-button{cursor:pointer}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px}
-    @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}}
-    fieldset{border:1px dashed rgba(255,255,255,0.15);border-radius:12px;padding:12px}
-    legend{color:var(--muted);padding:0 6px;font-size:.95rem}
-    .row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
-    .btn{cursor:pointer;border:1px solid transparent;border-radius:12px;padding:12px 16px;font-weight:600}
-    .btn.primary{background:linear-gradient(90deg,#3a7bd5,#00d2ff);color:#07121f}
-    .btn.secondary{background:#0f1829;color:var(--text);border-color:rgba(255,255,255,0.15)}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-    .hint{font-size:.9rem;color:var(--muted)} .pill{display:inline-block;padding:4px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:999px;font-size:.8rem;color:var(--muted)}
-    .footer{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .status{font-size:.95rem}
+    h1 {
+      color: #444;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input[type=file], button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    input[type=file] {
+      background: #eee;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .checklist {
+      margin-top: 20px;
+    }
+    .checklist label {
+      display: block;
+      margin: 8px 0;
+    }
   </style>
+  <!-- SheetJS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Excel Editor (Client-Side)</h1>
-      <p class="lead">Upload an Excel file, choose options, and download the edited file. No server needed — works fully in your browser.</p>
+  <div class="container">
+    <h1>Checklist Excel Editor</h1>
 
-      <div class="grid two">
-        <div>
-          <label for="file">Excel file (.xlsx)</label>
-          <input type="file" id="file" accept=".xlsx,.xlsb,.xlsm,.xls" />
-        </div>
-        <div>
-          <label for="sheet">Target sheet</label>
-          <select id="sheet" disabled></select>
-        </div>
-      </div>
+    <!-- Upload Excel -->
+    <input type="file" id="upload" accept=".xlsx" />
 
-      <fieldset>
-        <legend>Checklist → Cell Mapping</legend>
-        <div class="hint">Toggle any option to write its <em>value</em> into the specified <em>cell address</em>.</div>
-        <div class="checkboxes">
-          <label><input type="checkbox" class="map" data-cell="A1" data-value="Hello world"> Write "Hello world" into A1</label>
-          <label><input type="checkbox" class="map" data-cell="B2" data-value="123"> Write 123 into B2</label>
-          <label><input type="checkbox" class="map" data-cell="C3" data-value="2025-01-15" data-type="d"> Write date 2025-01-15 into C3</label>
-        </div>
-      </fieldset>
-
-      <div class="row">
-        <input id="outName" type="text" placeholder="Output filename (optional, e.g., Edited.xlsx)" />
-        <button id="run" class="btn primary" disabled>Process & Download</button>
-      </div>
-
-      <div class="footer">
-        <span class="status" id="status"><span class="pill">Idle</span> Load a file to begin.</span>
-        <button id="reset" class="btn secondary">Reset</button>
-      </div>
+    <!-- Checklist -->
+    <div class="checklist">
+      <h3>Checklist</h3>
+      <label><input type="checkbox" value="Task 1"> Task 1</label>
+      <label><input type="checkbox" value="Task 2"> Task 2</label>
+      <label><input type="checkbox" value="Task 3"> Task 3</label>
     </div>
+
+    <!-- Download -->
+    <button id="download">Download Edited Excel</button>
   </div>
 
   <script>
-    (function () {
-      let workbook = null, originalName = null;
-      const $file = document.getElementById('file');
-      const $sheet = document.getElementById('sheet');
-      const $run = document.getElementById('run');
-      const $reset = document.getElementById('reset');
-      const $status = document.getElementById('status');
-      const $outName = document.getElementById('outName');
+    let workbook; // store Excel file globally
+    let worksheet;
 
-      function setStatus(msg) {
-        $status.innerHTML = `<span class="pill">${workbook ? 'Ready' : 'Idle'}</span> ${msg}`;
-      }
-      function clearUI() {
-        $sheet.innerHTML = ''; $sheet.disabled = true;
-        $run.disabled = true; workbook = null; originalName = null;
-        $file.value = ''; setStatus('Load a file to begin.');
-      }
-      function isNumeric(v){return /^[-+]?\d+(\.\d+)?$/.test(String(v).trim())}
-      function parseVal(ds){
-        if((ds.type||'').toLowerCase()==='d'){return{v:new Date(ds.value),t:'d'}}
-        if(isNumeric(ds.value))return{v:Number(ds.value),t:'n'}
-        return{v:ds.value,t:'s'}
-      }
-      function outName(input, custom){
-        if(custom&&custom.trim())return custom.trim().replace(/\s+/g,'_');
-        if(!input)return'Edited.xlsx';
-        return input.replace(/\.xlsx$/i,'')+'-edited.xlsx';
+    document.getElementById("upload").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        workbook = XLSX.read(data, { type: "array" });
+
+        // take the first sheet
+        const sheetName = workbook.SheetNames[0];
+        worksheet = workbook.Sheets[sheetName];
+
+        // show data in console
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        console.log("Excel content:", json);
+        alert("Excel uploaded successfully! Open console to view data.");
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById("download").addEventListener("click", function() {
+      if (!workbook || !worksheet) {
+        alert("Please upload an Excel file first!");
+        return;
       }
 
-      $file.addEventListener('change', e => {
-        const f=e.target.files[0]; if(!f) return;
-        const reader=new FileReader();
-        reader.onload=evt=>{
-          const data=evt.target.result;
-          try{
-            try {
-              workbook=XLSX.read(new Uint8Array(data),{type:'array',cellDates:true});
-            } catch(e1) {
-              workbook=XLSX.read(data,{type:'binary',cellDates:true});
-            }
-            originalName=f.name;
-            $sheet.innerHTML='';
-            workbook.SheetNames.forEach((n,i)=>{
-              let opt=document.createElement('option');
-              opt.value=n; opt.textContent=`${i+1}. ${n}`; $sheet.appendChild(opt);
-            });
-            $sheet.disabled=false; $run.disabled=false;
-            setStatus(`Loaded “${f.name}”. Select options and click Process.`);
-          }catch(err){console.error(err);setStatus('❌ Failed to read Excel. Please re-save as standard .xlsx and retry.')}
-        };
-        reader.readAsArrayBuffer(f);
+      // Get selected checklist items
+      const selected = Array.from(document.querySelectorAll(".checklist input:checked"))
+                            .map(cb => cb.value);
+
+      // Write checklist items into Excel (Column A starting from A1)
+      selected.forEach((val, i) => {
+        const cellRef = "A" + (i + 1);
+        worksheet[cellRef] = { t: "s", v: val };
       });
 
-      $run.addEventListener('click', ()=>{
-        if(!workbook)return alert('Upload an Excel file first.');
-        const ws=workbook.Sheets[$sheet.value||workbook.SheetNames[0]];
-        document.querySelectorAll('input.map:checked').forEach(cb=>{
-          const cell=cb.dataset.cell, {v,t}=parseVal(cb.dataset);
-          ws[cell]={v,t};
-          const r=XLSX.utils.decode_range(ws['!ref']||'A1');
-          const a=XLSX.utils.decode_cell(cell);
-          r.s.r=Math.min(r.s.r,a.r); r.s.c=Math.min(r.s.c,a.c);
-          r.e.r=Math.max(r.e.r,a.r); r.e.c=Math.max(r.e.c,a.c);
-          ws['!ref']=XLSX.utils.encode_range(r);
-        });
-        const out=outName(originalName,$outName.value);
-        XLSX.writeFile(workbook,out);
-        setStatus(`File downloaded as “${out}”.`);
+      // Update sheet range
+      worksheet["!ref"] = XLSX.utils.encode_range({
+        s: { c: 0, r: 0 },
+        e: { c: 0, r: selected.length - 1 }
       });
 
-      $reset.addEventListener('click', clearUI);
-      clearUI();
-    })();
+      // Export file
+      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "EditedChecklist.xlsx";
+      link.click();
+    });
   </script>
 </body>
 </html>
