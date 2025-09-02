@@ -2,127 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Checklist Excel Editor</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-      background: #f4f4f9;
-      color: #333;
-    }
-    h1 {
-      color: #444;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input[type=file], button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    input[type=file] {
-      background: #eee;
-    }
-    button {
-      background: #007bff;
-      color: #fff;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .checklist {
-      margin-top: 20px;
-    }
-    .checklist label {
-      display: block;
-      margin: 8px 0;
-    }
-  </style>
-  <!-- SheetJS Library -->
+  <title>Quotation Builder</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Checklist Excel Editor</h1>
+    <h1>Quotation Builder</h1>
+    <div id="steps">
 
-    <!-- Upload Excel -->
-    <input type="file" id="upload" accept=".xlsx" />
+      <!-- Step 1: Upload -->
+      <div class="step active" id="step1">
+        <h2>Step 1 – Upload Excel & Quotation Info</h2>
+        <input type="file" id="upload" accept=".xlsx"><br>
+        <input type="text" id="quotationName" placeholder="Quotation Name"><br>
+        <input type="text" id="flightTicket" placeholder="Flight Ticket"><br>
+        <h3>Sites</h3>
+        <label><input type="checkbox" value="Pyramids"> Pyramids</label>
+        <label><input type="checkbox" value="Museum"> Museum</label>
+        <label><input type="checkbox" value="Luxor Temple"> Luxor Temple</label>
+        <br>
+        <button onclick="nextStep(2)">Next</button>
+      </div>
 
-    <!-- Checklist -->
-    <div class="checklist">
-      <h3>Checklist</h3>
-      <label><input type="checkbox" value="Task 1"> Task 1</label>
-      <label><input type="checkbox" value="Task 2"> Task 2</label>
-      <label><input type="checkbox" value="Task 3"> Task 3</label>
+      <!-- Step 2: Accommodation -->
+      <div class="step" id="step2">
+        <h2>Step 2 – Accommodation</h2>
+        <div id="accommodationForm">
+          <div>
+            <label>Cairo Nights: <input type="number" id="cairoNights"></label>
+            <label>Price: <input type="number" id="cairoPrice"></label>
+          </div>
+          <div>
+            <label>Sharm Nights: <input type="number" id="sharmNights"></label>
+            <label>Price: <input type="number" id="sharmPrice"></label>
+          </div>
+          <div>
+            <label>Luxor Nights: <input type="number" id="luxorNights"></label>
+            <label>Price: <input type="number" id="luxorPrice"></label>
+          </div>
+        </div>
+        <button onclick="prevStep(1)">Back</button>
+        <button onclick="nextStep(3)">Next</button>
+      </div>
+
+      <!-- Step 3: Meals -->
+      <div class="step" id="step3">
+        <h2>Step 3 – Meals</h2>
+        <input type="text" id="guideTicket" placeholder="Guide Ticket"><br>
+        <input type="text" id="guideAccommodation" placeholder="Guide Accommodation"><br>
+        <input type="number" id="mealsCount" placeholder="Number of Meals"><br>
+        <button onclick="prevStep(2)">Back</button>
+        <button onclick="nextStep(4)">Next</button>
+      </div>
+
+      <!-- Step 4: Trips + Export -->
+      <div class="step" id="step4">
+        <h2>Step 4 – Trips & Export</h2>
+        <label><input type="checkbox" value="Cairo Tour"> Cairo Tour</label>
+        <label><input type="checkbox" value="Sharm Diving"> Sharm Diving</label>
+        <label><input type="checkbox" value="Aswan Nile"> Aswan Nile</label>
+        <br><br>
+        <button onclick="prevStep(3)">Back</button>
+        <button onclick="generateExcel()">Download Quotation</button>
+      </div>
+
     </div>
-
-    <!-- Download -->
-    <button id="download">Download Edited Excel</button>
   </div>
-
-  <script>
-    let workbook; // store Excel file globally
-    let worksheet;
-
-    document.getElementById("upload").addEventListener("change", function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        workbook = XLSX.read(data, { type: "array" });
-
-        // take the first sheet
-        const sheetName = workbook.SheetNames[0];
-        worksheet = workbook.Sheets[sheetName];
-
-        // show data in console
-        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        console.log("Excel content:", json);
-        alert("Excel uploaded successfully! Open console to view data.");
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
-
-    document.getElementById("download").addEventListener("click", function() {
-      if (!workbook || !worksheet) {
-        alert("Please upload an Excel file first!");
-        return;
-      }
-
-      // Get selected checklist items
-      const selected = Array.from(document.querySelectorAll(".checklist input:checked"))
-                            .map(cb => cb.value);
-
-      // Write checklist items into Excel (Column A starting from A1)
-      selected.forEach((val, i) => {
-        const cellRef = "A" + (i + 1);
-        worksheet[cellRef] = { t: "s", v: val };
-      });
-
-      // Update sheet range
-      worksheet["!ref"] = XLSX.utils.encode_range({
-        s: { c: 0, r: 0 },
-        e: { c: 0, r: selected.length - 1 }
-      });
-
-      // Export file
-      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-      const blob = new Blob([wbout], { type: "application/octet-stream" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "EditedChecklist.xlsx";
-      link.click();
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
