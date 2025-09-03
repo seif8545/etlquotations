@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Quotation Builder</title>
+  <title>Quotation Builder (Review & Editable)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; }
+    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; --accent:#06b6d4; }
     * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); }
-    .container { max-width:1100px; margin:32px auto; padding:24px; background:var(--card); border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
-    h1 { margin:0 0 12px; font-size:28px; }
-    .sub { color:var(--muted); margin-bottom:24px; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); }
+    .container { max-width:1200px; margin:28px auto; padding:20px; background:var(--card); border-radius:14px; box-shadow:0 12px 40px rgba(2,6,23,.08); }
+    header { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    h1 { margin:0; font-size:24px; }
+    .sub { color:var(--muted); margin:8px 0 18px; }
     .steps { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
     .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:13px; }
     .step { display:none; }
@@ -19,47 +20,53 @@
     .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .card { padding:16px; border:1px solid #eee; border-radius:12px; background:#fff; }
-    .card h3 { margin:0 0 12px; font-size:16px; }
-    label { display:block; margin:6px 0; }
-    input[type="text"], select { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; }
-    input[type="file"] { padding:10px; border:1px dashed #bbb; border-radius:8px; background:#fafafa; width:100%; }
+    .card { padding:16px; border:1px solid #e8eef7; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); box-shadow:0 4px 16px rgba(11,95,255,.03); }
+    .card h3 { margin:0 0 10px; font-size:16px; color:var(--accent); }
+    label { display:block; margin:6px 0; color:#333; font-size:13px; }
+    input[type="text"], input[type="number"], select, textarea { width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+    input[type="file"] { padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#fafafa; width:100%; }
     .row { display:flex; gap:12px; align-items:center; }
     .row > * { flex:1; }
-    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; flex-wrap:wrap; }
-    button { appearance:none; border:none; background:var(--pri); color:#fff; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
-    button.secondary { background:#e9ecef; color:#111; }
-    button:hover { background:var(--pri-d); }
-    button.secondary:hover { background:#dde2e6; }
-    .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; }
+    button { appearance:none; border:none; background:var(--pri); color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; box-shadow:0 6px 18px rgba(11,95,255,.08); }
+    button.secondary { background:#eef2ff; color:var(--pri); border:1px solid #e6f0ff; }
+    button.ghost { background:transparent; color:var(--pri); border:1px dashed #cfe6ff; }
+    button:hover { filter:brightness(.95); transform:translateY(-1px); }
+    .hint { color:var(--muted); font-size:13px; margin-top:6px; }
     .stack { display:flex; flex-direction:column; gap:8px; }
-    .checks { max-height:260px; overflow:auto; border:1px solid #eee; padding:10px; border-radius:8px; background:#fafafa; }
-    .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; }
-    .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#333; }
-
-    /* ---- Step 5 Results styling (additions) ---- */
-    .results-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
-    .results-title { font-size:20px; font-weight:700; }
-    .resnote { color:var(--muted); font-size:12px; }
-    .table-wrap { overflow:auto; border:1px solid #eee; border-radius:12px; }
-    table { width:100%; border-collapse:collapse; background:#fff; }
-    thead th { background:#f7f8ff; text-align:left; font-size:13px; color:#333; padding:10px 12px; position:sticky; top:0; }
-    tbody td { border-top:1px solid #eee; padding:10px 12px; font-size:14px; }
-    tbody td[contenteditable="true"] { background:#fffdf7; outline:none; }
-    tbody td[contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px #ffe08a; background:#fff9e6; }
-    .two-col { grid-template-columns: 1fr 1fr; }
-    .results-grid { display:grid; gap:16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr; } }
-    .kicker { color:#555; font-size:12px; margin-bottom:8px; }
+    .checks { max-height:260px; overflow:auto; border:1px solid #eef2f6; padding:10px; border-radius:8px; background:#fcfeff; }
+    .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; font-size:14px; }
+    .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#0b5fff; }
+    /* Review page styles */
+    .review-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .review-area { display:grid; gap:16px; grid-template-columns: 1fr 420px; }
+    .review-left { padding:12px; border-radius:10px; background:#fff; border:1px solid #eef5ff; }
+    .review-right { padding:12px; border-radius:10px; background:#fff; border:1px solid #eef5ff; max-height:72vh; overflow:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid #f1f5f9; padding:8px 6px; text-align:left; vertical-align:middle; }
+    th { background:linear-gradient(90deg,#fbfdff,#f5fbff); color:#0b4bcc; font-weight:700; }
+    .numCell { width:120px; text-align:right; }
+    .editable { background:#fffbe6; border:1px dashed #ffe58f; padding:6px 8px; border-radius:6px; min-width:60px; text-align:right; }
+    .muted { color:var(--muted); font-size:13px; }
+    .summary { font-size:15px; font-weight:700; color:#0b5fff; text-align:right; }
+    .small { font-size:12px; color:var(--muted); }
+    .badge { display:inline-block; padding:6px 8px; border-radius:8px; font-weight:700; background:#eef2ff; color:#0b5fff; font-size:13px; }
   </style>
+
+  <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Quotation Builder</h1>
-    <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill steps, then review & download.</div>
+    <header>
+      <div>
+        <h1>Quotation Builder</h1>
+        <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill steps, then review & edit the generated report (no download).</div>
+      </div>
+      <div class="muted small">Client-only, powered by SheetJS</div>
+    </header>
 
-    <div class="steps">
+    <div class="steps" aria-hidden>
       <span class="pill">1) Upload & Sites</span>
       <span class="pill">2) Accommodation</span>
       <span class="pill">3) Meals & Guides</span>
@@ -73,7 +80,7 @@
         <div class="card">
           <h3>Upload Excel (.xlsx)</h3>
           <input type="file" id="upload" accept=".xlsx" />
-          <div class="hint">This is your base file. We’ll write into the worksheet</div>
+          <div class="hint">This is your base file. We’ll read the lookup sheets (Sites & Transfers) and use them to compute the numbers.</div>
         </div>
         <div class="card">
           <h3>Quotation Info</h3>
@@ -127,12 +134,14 @@
           <div class="checks" id="cbSharm"></div>
         </div>
       </div>
-     <div class="grid cols-2" style="margin-top:16px;">
-     <div class="card">
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
           <h3>Mosques</h3>
           <div class="checks" id="cbMosques"></div>
         </div>
-  </div>
+      </div>
+
       <div class="buttons">
         <button class="secondary" id="resetBtn1" type="button">Reset</button>
         <button id="toStep2" type="button">Next → Accommodation</button>
@@ -285,88 +294,52 @@
 
       <div class="buttons">
         <button class="secondary" id="back3" type="button">← Back</button>
-        <!-- Same ID kept; behavior now opens Step 5 to review & edit -->
-        <button id="downloadBtn" type="button">Review → Results Page</button>
+        <button id="downloadBtn" type="button">Show Review & Edit</button>
       </div>
     </section>
 
-    <!-- STEP 5 (NEW) -->
-    <section class="step" id="step5">
-      <div class="results-header">
-        <div class="results-title">Results — <span id="resQuoteName"></span></div>
-        <div class="resnote">Click any highlighted cell to edit. Changes will be saved back to the workbook.</div>
-      </div>
-
-      <div class="results-grid">
-        <div class="card">
-          <div class="kicker">Flight Ticket & Sites (Excel F10–G40)</div>
-          <div class="table-wrap">
-            <table id="tblSites">
-              <thead><tr><th style="width:60%">F (Item)</th><th style="width:40%">G (Value)</th></tr></thead>
-              <tbody></tbody>
-            </table>
+    <!-- STEP 5: Review & Edit (generated from Excel + inputs) -->
+    <section class="step" id="step5" aria-live="polite">
+      <div class="card">
+        <div class="review-toolbar">
+          <div>
+            <span class="badge">Review & Edit</span>
+            <span style="margin-left:10px" id="reviewQuoteTitle" class="muted"></span>
+          </div>
+          <div>
+            <button class="secondary" id="backToSteps">← Back to steps</button>
+            <button id="applyEdits" class="ghost">Apply Edits to State</button>
           </div>
         </div>
 
-        <div class="card">
-          <div class="kicker">Trips (Excel H10–H40)</div>
-          <div class="table-wrap">
-            <table id="tblTrips">
-              <thead><tr><th>H (Trip)</th></tr></thead>
-              <tbody></tbody>
-            </table>
+        <div class="review-area">
+          <div class="review-left" id="reviewLeft">
+            <h3 style="margin-top:0">Detail Rows (Rows 10 → 40)</h3>
+            <div id="detailTables"></div>
           </div>
-        </div>
 
-        <div class="card">
-          <div class="kicker">Accommodation (Excel B10–C15)</div>
-          <div class="table-wrap">
-            <table id="tblAccommodation">
-              <thead><tr><th style="width:70%">B (Description)</th><th style="width:30%">C (Cost)</th></tr></thead>
-              <tbody></tbody>
-            </table>
+          <div class="review-right" id="reviewRight">
+            <h3 style="margin-top:0">Summary</h3>
+            <div id="reviewSummary" class="summary">Computing...</div>
+            <div style="height:12px"></div>
+            <h4 class="small">Editable Controls</h4>
+            <div class="small muted">Change numbers in the yellow fields to adjust results. Click "Apply Edits to State" to save.</div>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="kicker">Meals (Excel J10–K20)</div>
-          <div class="table-wrap">
-            <table id="tblMeals">
-              <thead><tr><th style="width:70%">J (Description)</th><th style="width:30%">K (Cost)</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card" style="grid-column: 1 / -1;">
-          <div class="kicker">Guide Extras (Excel L12–M13)</div>
-          <div class="table-wrap">
-            <table id="tblGuide">
-              <thead><tr><th style="width:70%">L (Label)</th><th style="width:30%">M (Value)</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="buttons" style="margin-top:16px;">
-        <button class="secondary" id="back4" type="button">← Back</button>
-        <div style="display:flex; gap:8px;">
-          <button id="btnSaveEdits" type="button">Save Edits</button>
-          <button id="btnSaveAndDownload" type="button">Save Edits & Download (.xlsx)</button>
         </div>
       </div>
     </section>
+
   </div>
 
   <script>
     // ---------- State (Session-like) ----------
     const appState = {
       workbook: null, // SheetJS workbook
+      sheetName: null,
       quotationName: "",
       // Step1:
       flightTicket: "",
-      sites: [], // from all first page checklists combined
+      sites: [], // sequence for F10.. etc
       // Step2:
       accommodation: { // nights & price per place
         "Cairo/Giza": { nights: "0", price: "0" },
@@ -389,12 +362,25 @@
         "Sharm": [],
         "Luxor": [],
         "Aswan": []
+      },
+
+      // Lookups parsed from workbook
+      lookups: {
+        sites: {},        // name -> { price: number, newPrice: number }
+        transfers: {}     // name -> { before: [p1,p2,p3], after: [p1',p2',p3'] }
+      },
+
+      // computed preview model
+      preview: {
+        rows: [], // array for rowIndex 10..40 with fields for B..M-ish
+        accommodationRows: [], // rows 10..15
+        mealRows: []
       }
     };
 
     // ---------- Helpers ----------
     const $ = sel => document.querySelector(sel);
-    function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); }
+    function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
     function optionRange(sel, from, to, withZeroValue=true) {
       sel.innerHTML = "";
       for (let i=from;i<=to;i++){
@@ -424,8 +410,10 @@
       });
     }
     function getChecked(container){ return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value); }
+    function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const n = Number(String(v).toString().replace(/[, ]+/g,'')); return Number.isFinite(n)?n:null; }
+    function fmt(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
 
-    // ---------- Static Data (exact items from your ASPX) ----------
+    // ---------- Static client-side lists (same as your ASPX) ----------
     const lists = {
       Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
       Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
@@ -437,14 +425,13 @@
       Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
       Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
 
-      // Trips Step 4:
       CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
       SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
       LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
       AswanTrips: ["Aswan Station","Aswan apt","Aswan fd","Nubian Museum","Abu Simbel","Nubian Village","Nubian Village Visit"]
     };
 
-    // ---------- Render dynamic controls ----------
+    // ---------- Render dynamic controls (same as original) ----------
     renderChecks('#cbPyramids', lists.Pyramids);
     renderChecks('#cbSakkara', lists.Sakkara);
     renderChecks('#cbCairoGiza', lists.CairoGiza);
@@ -492,15 +479,18 @@
     optionRange(document.getElementById('Cairofd'), 0, 5, false);
     optionRange(document.getElementById('CairoNight'), 0, 5, false);
 
-    // ---------- Upload Excel ----------
+    // ---------- Upload Excel (SheetJS) ----------
     document.getElementById('upload').addEventListener('change', e=>{
       const file=e.target.files[0]; if(!file) return;
       const reader=new FileReader();
       reader.onload = evt=>{
-        const data=new Uint8Array(evt.target.result);
+        const data = new Uint8Array(evt.target.result);
         try {
           appState.workbook = XLSX.read(data, { type:'array' });
-          alert('Excel uploaded successfully.');
+          // choose first sheet as the main (like EPPlus earlier)
+          appState.sheetName = appState.workbook.SheetNames[0];
+          parseLookupsFromWorkbook(); // parse Sites & Transfers into appState.lookups
+          alert('Excel uploaded and lookups parsed successfully.');
         } catch (err) {
           console.error(err);
           alert('Failed to read Excel. Ensure it is a valid .xlsx');
@@ -509,7 +499,97 @@
       reader.readAsArrayBuffer(file);
     });
 
-    // ---------- Navigation ----------
+    // ---------- Parse lookup tables from workbook sheet names (Sites & Transfers) ----------
+    function findSheetByNameLike(sub) {
+      if(!appState.workbook) return null;
+      const target = appState.workbook.SheetNames.find(n => n.toLowerCase().includes(sub.toLowerCase()));
+      return target || null;
+    }
+
+    function parseLookupsFromWorkbook(){
+      // Sites
+      const sitesSheetName = findSheetByNameLike('site') || findSheetByNameLike('sites');
+      appState.lookups.sites = {};
+      if(sitesSheetName){
+        const sht = appState.workbook.Sheets[sitesSheetName];
+        const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
+        // assume header on row 1, data from row 2 onwards
+        for(let r=1;r<rows.length;r++){
+          const row = rows[r];
+          const name = row[0]; if(!name) continue;
+          const price = parseNumber(row[1]) || 0;
+          // if sheet column 3 exists and is numeric, use it; else compute B * 1.1
+          const newPriceRaw = parseNumber(row[2]);
+          const newPrice = newPriceRaw || Math.round(price * 1.1 * 100)/100;
+          appState.lookups.sites[String(name).trim()] = { price, newPrice };
+        }
+      } else {
+        console.warn('Sites sheet not found; site lookups will be empty.');
+      }
+
+      // Transfers
+      const transfersSheetName = findSheetByNameLike('transfer') || findSheetByNameLike('transfers');
+      appState.lookups.transfers = {};
+      if(transfersSheetName){
+        const sht = appState.workbook.Sheets[transfersSheetName];
+        const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
+        // rows[0] often contains header and maybe a multiplier value; but we parse per-row formulas or numeric
+        for(let r=1;r<rows.length;r++){
+          const row = rows[r];
+          const nameBefore = row[0];
+          // sometimes transfer name appears again at col 4 or 5; we'll use nameBefore || row[4]
+          const transferName = (nameBefore || row[4]);
+          if(!transferName) continue;
+          const b = parseNumber(row[1]);
+          const c = parseNumber(row[2]);
+          const d = parseNumber(row[3]);
+          const beforeArr = [b||0, c||0, d||0];
+
+          // For after-price columns (often columns 5..7 or 6..8 depending on sheet), row[5],row[6],row[7] may be formula strings like "=B2*110%"
+          // We'll try this order: row[5..7] (zero-based index)
+          let after = [null,null,null];
+          // If explicit numeric present, take it. Otherwise try parse multiplier from formula string.
+          for(let j=5;j<=7;j++){
+            const cellVal = row[j];
+            if(typeof cellVal === 'number') { after[j-5] = cellVal; }
+            else if(typeof cellVal === 'string' && cellVal.startsWith('=')){
+              // try to extract multiplier like "*110%" or "*130%"
+              const m = parseMultiplierFromFormula(cellVal);
+              if(m) after[j-5] = Math.round(beforeArr[j-5]*m*100)/100;
+            }
+          }
+          // If after values still null, fallback to a default multiplier in header row if present (rows[0])
+          for(let k=0;k<3;k++){
+            if(after[k] === null){
+              // try header multiplier
+              const head = rows[0];
+              const headerMultiplierCell = head && head[head.length-1]; // last cell maybe contains multiplier like 1.1
+              const headerMultiplier = parseNumber(headerMultiplierCell) || 1.1;
+              after[k] = Math.round(beforeArr[k] * headerMultiplier * 100)/100;
+            }
+          }
+
+          appState.lookups.transfers[String(transferName).trim()] = { before: beforeArr, after: after };
+        }
+      } else {
+        console.warn('Transfers sheet not found; transfers lookup empty.');
+      }
+      // debug
+      console.log('Parsed lookups:', appState.lookups);
+    }
+
+    function parseMultiplierFromFormula(formula){
+      // formula examples: "=B2*110%" or "=B60*130%" or "=B2*1.10"
+      try {
+        const matchPct = formula.match(/\*(\d+)%/);
+        if(matchPct) return (Number(matchPct[1]) / 100);
+        const matchDec = formula.match(/\*([\d\.]+)/);
+        if(matchDec) return Number(matchDec[1]);
+      } catch(e){}
+      return null;
+    }
+
+    // ---------- Navigation handlers ----------
     document.getElementById('toStep2').onclick = ()=>{
       if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
       appState.quotationName = $('#quotationName').value.trim();
@@ -552,23 +632,16 @@
       showStep(4);
     };
     document.getElementById('back3').onclick = ()=> showStep(3);
+    document.getElementById('resetBtn1').onclick = ()=>{ if(confirm('Clear all current inputs?')) location.reload(); };
 
-    document.getElementById('resetBtn1').onclick = ()=>{
-      if(confirm('Clear all current inputs?')) location.reload();
-    };
-
-    // ---------- Excel Write (mirror EPPlus logic) ----------
+    // ---------- Keep original Excel-writing function (unchanged) ----------
     function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
     function set(ws, addr, value){
       ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
     }
-    function get(ws, addr){
-      const cell = ws[addr];
-      if(!cell) return "";
-      return (cell.t === 'n') ? String(cell.v) : (cell.v ?? "");
-    }
     function ensureRef(ws, minA1, maxA1){
       const dec = r=>XLSX.utils.decode_cell(r);
+      const enc = o=>XLSX.utils.encode_cell(o);
       const min = dec(minA1), max = dec(maxA1);
       const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
       const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
@@ -576,7 +649,6 @@
       ws['!ref'] = XLSX.utils.encode_range({s,e});
     }
 
-    // --- Original function kept exactly (still downloads from state) ---
     function writeExcelAndDownload(){
       if(!appState.workbook){ alert('No workbook loaded.'); return; }
       const sheetName = appState.workbook.SheetNames[0];
@@ -650,7 +722,7 @@
       // Ensure sheet ref includes up to M40 (so added cells are visible)
       ensureRef(ws, 'A1', 'M40');
 
-      // Download
+      // Download (kept for parity but not used in Review flow)
       const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
       const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
@@ -659,230 +731,376 @@
       document.body.appendChild(a); a.click(); a.remove();
     }
 
-    // ---------- NEW: Write only (no download) ----------
-    function writeExcelToWorkbookOnly(){
-      if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const sheetName = appState.workbook.SheetNames[0];
-      const ws = appState.workbook.Sheets[sheetName];
+    // ---------- Compute preview model (mimic your Excel formulas) ----------
+    function computePreviewModel(){
+      // Clear previous
+      appState.preview.rows = [];
+      appState.preview.accommodationRows = [];
+      appState.preview.mealRows = [];
 
-      // Sites + Flight Ticket
-      let rowF = 10;
-      const ft = n(appState.flightTicket);
-      if(ft !== null){
-        set(ws, `F${rowF}`, "Flight Ticket");
-        set(ws, `G${rowF}`, ft);
-        rowF++;
-      }
-      for(const item of appState.sites){
-        if(rowF > 40) break;
-        set(ws, `F${rowF}`, item);
-        rowF++;
+      // find "Quotation new" sheet date cell J2 and E3 people from workbook if present so we can replicate formula logic.
+      // We'll read J2 and E3 from workbook 'sheetName' if available, otherwise fall back to defaults (J2: today, E3: 2)
+      let sheetRaw = null;
+      if(appState.workbook && appState.sheetName){
+        sheetRaw = appState.workbook.Sheets[appState.sheetName];
       }
 
-      // Guide extras
-      const guideTicket = n(appState.guideTicket);
-      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
-      const guideAcc = n(appState.guideAccomodation);
-      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+      function readCellA1(a1){
+        if(!sheetRaw) return null;
+        const cell = sheetRaw[a1];
+        if(!cell) return null;
+        if(cell.v !== undefined) return cell.v;
+        // fallback to f maybe
+        return null;
+      }
+      // People in E3 (if available in workbook) - but the UI also doesn't expose E3; user earlier told E3 is used to decide transfers column: we will prefer workbook's E3 if present, otherwise fallback to 2.
+      const workbookPeople = readCellA1('E3');
+      const people = parseNumber(workbookPeople) || 2; // fallback
+      // Date in J2, default to today
+      const workbookDate = readCellA1('J2');
+      // workbookDate may be an Excel serial date; sheetJS sometimes returns Date object if cell type is date. We'll attempt to construct Date.
+      let j2Date = null;
+      if(workbookDate instanceof Date) j2Date = workbookDate;
+      else if(typeof workbookDate === 'number') { j2Date = XLSX.SSF.parse_date_code(workbookDate); if(j2Date) j2Date = new Date(Date.UTC(j2Date.y, j2Date.m-1, j2Date.d)); }
+      else if(typeof workbookDate === 'string') { const d = new Date(workbookDate); if(!isNaN(d)) j2Date = d; }
+      if(!j2Date) j2Date = new Date(); // fallback: today
 
-      // Trips H10..H40
-      let rowH = 10;
-      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
-      const cntApt = n(appState.cairoCounters.apt) || 0;
-      for(let i=0;i<cntApt;i++) addH("Cairo apt");
-      const cntFd = n(appState.cairoCounters.fd) || 0;
-      for(let i=0;i<cntFd;i++) addH("Cairo fd");
-      const cntNight = n(appState.cairoCounters.night) || 0;
-      for(let i=0;i<cntNight;i++) addH("Cairo night");
-      [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+      // threshold date for new site prices / transfer rates
+      const thresholdDate = new Date(2025,10,1); // Nov 1, 2025 (month 10 is November zero-based)
 
-      // Accommodation B/C rows 10..15
-      function fillAccommodation(place, nights, price, rowIndex){
-        const ni = n(nights) || 0;
-        const pi = n(price) || 0;
-        if(ni>0 && pi>0){
-          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
-          set(ws, `C${rowIndex}`, ni * pi);
+      // Build F-list (Flight Ticket option then selected site names)
+      const fList = [];
+      const ft = parseNumber(appState.flightTicket);
+      if(ft !== null){ fList.push({ label: 'Flight Ticket', value: ft }); }
+      for(const s of appState.sites) { fList.push({ label: s, value: null }); }
+
+      // Build H-list (transfers): add counts of apt, fd, night then checked trips in order
+      const hList = [];
+      const aptCnt = parseNumber(appState.cairoCounters.apt) || 0;
+      for(let i=0;i<aptCnt;i++) hList.push('Cairo apt');
+      const fdCnt = parseNumber(appState.cairoCounters.fd) || 0;
+      for(let i=0;i<fdCnt;i++) hList.push('Cairo fd');
+      const nightCnt = parseNumber(appState.cairoCounters.night) || 0;
+      for(let i=0;i<nightCnt;i++) hList.push('Cairo night');
+      // then checked trips:
+      [...(appState.trips.CairoGiza||[]), ...(appState.trips.Sharm||[]), ...(appState.trips.Luxor||[]), ...(appState.trips.Aswan||[])].forEach(t=>hList.push(t));
+
+      // Accommodation rows: fixed mapping to B10..C15 as in original
+      const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
+      for(let i=0;i<accomOrder.length;i++){
+        const place = accomOrder[i];
+        const rowIndex = 10 + i; // B10..B15
+        const nights = parseNumber(appState.accommodation[place].nights) || 0;
+        const price = parseNumber(appState.accommodation[place].price) || 0;
+        const total = (nights>0 && price>0) ? (nights * price) : "";
+        appState.preview.accommodationRows.push({ rowIndex, place, nights, price, total });
+      }
+
+      // Meals: build J/K starting at 10
+      let mealRowIndex = 10;
+      for(const tier of mealTiers){
+        const qty = parseNumber(appState.meals[tier]) || 0;
+        if(qty>0){
+          const total = qty * Number(tier);
+          appState.preview.mealRows.push({ rowIndex: mealRowIndex, tier: Number(tier), qty, total });
+          mealRowIndex++;
+        }
+      }
+
+      // Build rows 10..40 for columns B..M modeled; we will create objects with keys for B,C,D,F,G,H,I,J,K
+      const rows = [];
+      for(let r=10; r<=40; r++){
+        rows.push({
+          row: r,
+          B: null, C: null, D: null,
+          F: null, G: null,
+          H: null, I: null,
+          J: null, K: null
+        });
+      }
+
+      // Fill B/C from accommodationRows (rows 10..15)
+      for(const ac of appState.preview.accommodationRows){
+        const idx = ac.rowIndex - 10;
+        rows[idx].B = `${ac.nights>0 ? ac.nights : ''}${ac.nights>0 ? ' nights ' : ''}${ac.place}`;
+        rows[idx].C = ac.total === "" ? "" : ac.total;
+        rows[idx].D = (ac.total !== "" && ac.total !== null) ? Math.round(ac.total * 0.7 * 100)/100 : "";
+      }
+
+      // Fill J/K from mealRows
+      for(const m of appState.preview.mealRows){
+        const idx = m.rowIndex - 10;
+        rows[idx].J = `${m.qty} ${m.tier} meals`;
+        rows[idx].K = m.total;
+      }
+
+      // Fill F/G: flight ticket + site names
+      for(let i=0;i<fList.length;i++){
+        const rowIndex = 10 + i;
+        if(rowIndex>40) break;
+        rows[rowIndex - 10].F = fList[i].label;
+        // compute G:
+        if(fList[i].label === 'Flight Ticket'){
+          rows[rowIndex - 10].G = (fList[i].value !== null) ? Number(fList[i].value) : "";
         } else {
-          set(ws, `B${rowIndex}`, "");
-          set(ws, `C${rowIndex}`, "");
+          // lookup site price
+          const sname = fList[i].label;
+          const siteLookup = appState.lookups.sites[sname];
+          if(siteLookup){
+            const useNew = (j2Date >= thresholdDate);
+            rows[rowIndex - 10].G = useNew ? siteLookup.newPrice : siteLookup.price;
+          } else {
+            rows[rowIndex - 10].G = ""; // unknown site
+          }
         }
       }
-      fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
-      fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
-      fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
-      fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
-      fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
-      fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
 
-      // Meals J/K rows 10..20
-      let currentRowJ = 10, currentRowK = 10;
-      function writeMeals(mealCategory, mealsQuantityStr){
-        const q = n(mealsQuantityStr);
-        if(q && q>0){
-          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
-          set(ws, `K${currentRowK}`, q * n(mealCategory));
-          currentRowJ++; currentRowK++;
+      // Fill H/I for transfers
+      for(let i=0;i<hList.length;i++){
+        const rowIndex = 10 + i;
+        if(rowIndex>40) break;
+        const tName = hList[i];
+        rows[rowIndex - 10].H = tName;
+        if(!tName){
+          rows[rowIndex - 10].I = "";
+        } else {
+          // choose before/after based on j2Date
+          const useAfter = (j2Date >= thresholdDate);
+          const tr = appState.lookups.transfers[tName];
+          if(tr){
+            const arr = useAfter ? tr.after : tr.before;
+            // choose index by people:
+            const idx = (people <= 7) ? 0 : (people <= 15 ? 1 : 2);
+            rows[rowIndex - 10].I = arr[idx] || "";
+          } else {
+            rows[rowIndex - 10].I = "";
+          }
         }
       }
-      mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "");
 
-      ensureRef(ws, 'A1', 'M40');
-      return ws;
+      // For any row where C exists and numeric, ensure D=0.7*C
+      for(const r of rows){
+        const cVal = parseNumber(r.C);
+        if(cVal !== null) r.D = Math.round(cVal * 0.7 * 100)/100;
+      }
+
+      // Save preview rows
+      appState.preview.rows = rows;
+
+      // compute a simple summary total
+      let summaryTotal = 0;
+      // Sum accommodation C, site G, transfer I, meals K
+      for(const r of rows){
+        const c = parseNumber(r.C) || 0;
+        const g = parseNumber(r.G) || 0;
+        const i = parseNumber(r.I) || 0;
+        const k = parseNumber(r.K) || 0;
+        summaryTotal += (c + g + i + k);
+      }
+      appState.preview.summaryTotal = Math.round(summaryTotal*100)/100;
+      console.log('Preview computed. People (E3):', people, 'J2 date:', j2Date);
     }
 
-    // ---------- NEW: Results builder ----------
-    function makeCell(tag, addr, text, editable=true){
-      const td = document.createElement(tag);
-      if(editable){ td.setAttribute('contenteditable', 'true'); }
-      td.dataset.cell = addr;
-      td.textContent = text ?? "";
-      return td;
-    }
+    // ---------- Render review page with editable fields ----------
+    function renderReviewPage(){
+      $('#reviewQuoteTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
+      computePreviewModel();
 
-    function buildTableRows(ws){
-      // Sites / Flight Ticket: F10..F40 (G for value)
-      const sitesBody = document.querySelector('#tblSites tbody');
-      sitesBody.innerHTML = '';
-      for(let r=10; r<=40; r++){
-        const f = get(ws, `F${r}`);
-        const g = get(ws, `G${r}`);
-        if(f || g){
+      const rows = appState.preview.rows;
+      const detailDiv = $('#detailTables');
+      detailDiv.innerHTML = '';
+
+      // Accommodation table (B/C/D) rows 10..15
+      const accom = appState.preview.accommodationRows;
+      const accomTbl = document.createElement('div');
+      accomTbl.innerHTML = `<h4 class="small">Accommodation (B / C / D)</h4>`;
+      const t1 = document.createElement('table');
+      t1.innerHTML = `<thead><tr><th>Row</th><th>Place</th><th class="numCell">Total ($)</th><th class="numCell">Calc D = 70% ($)</th></tr></thead>`;
+      const b1 = document.createElement('tbody');
+      accom.forEach(a=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${a.rowIndex}</td>
+          <td>${a.place} — <span class="small">nights: ${a.nights} @ ${a.price}</span></td>
+          <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.total===\"\"?\"\":a.total}"></td>
+          <td class="numCell">${fmt(a.total!==""?Math.round(a.total*0.7*100)/100:"")}</td>`;
+        b1.appendChild(tr);
+      });
+      t1.appendChild(b1); accomTbl.appendChild(t1);
+      detailDiv.appendChild(accomTbl);
+
+      // Sites/Flights table (F/G)
+      const fTblDiv = document.createElement('div'); fTblDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G)</h4>`;
+      const t2 = document.createElement('table');
+      t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (G)</th></tr></thead>`;
+      const b2 = document.createElement('tbody');
+      rows.forEach(r=>{
+        if(r.F !== null && r.F !== ""){
           const tr = document.createElement('tr');
-          tr.appendChild(makeCell('td', `F${r}`, f));
-          tr.appendChild(makeCell('td', `G${r}`, g));
-          sitesBody.appendChild(tr);
+          tr.innerHTML = `<td>${r.row}</td>
+            <td>${escapeHtml(r.F)}</td>
+            <td class="numCell"><input class="editable" data-path="F:${r.row}" value="${r.G!==null && r.G!==''?r.G:''}" /></td>`;
+          b2.appendChild(tr);
         }
-      }
+      });
+      t2.appendChild(b2); fTblDiv.appendChild(t2); detailDiv.appendChild(fTblDiv);
 
-      // Trips: H10..H40
-      const tripsBody = document.querySelector('#tblTrips tbody');
-      tripsBody.innerHTML = '';
-      for(let r=10; r<=40; r++){
-        const h = get(ws, `H${r}`);
-        if(h){
+      // Transfers table (H / I)
+      const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I)</h4>`;
+      const t3 = document.createElement('table');
+      t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price (I)</th></tr></thead>`;
+      const b3 = document.createElement('tbody');
+      rows.forEach(r=>{
+        if(r.H !== null && r.H !== ""){
           const tr = document.createElement('tr');
-          tr.appendChild(makeCell('td', `H${r}`, h));
-          tripsBody.appendChild(tr);
+          tr.innerHTML = `<td>${r.row}</td>
+            <td>${escapeHtml(r.H)}</td>
+            <td class="numCell"><input class="editable" data-path="H:${r.row}" value="${r.I!==null && r.I!==''?r.I:''}" /></td>`;
+          b3.appendChild(tr);
         }
-      }
+      });
+      t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
 
-      // Accommodation: B10..C15
-      const accBody = document.querySelector('#tblAccommodation tbody');
-      accBody.innerHTML = '';
-      for(let r=10; r<=15; r++){
-        const b = get(ws, `B${r}`);
-        const c = get(ws, `C${r}`);
-        if(b || c){
+      // Meals table (J / K)
+      const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K)</h4>`;
+      const t4 = document.createElement('table');
+      t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (K)</th></tr></thead>`;
+      const b4 = document.createElement('tbody');
+      rows.forEach(r=>{
+        if(r.J !== null && r.J !== ""){
           const tr = document.createElement('tr');
-          tr.appendChild(makeCell('td', `B${r}`, b));
-          tr.appendChild(makeCell('td', `C${r}`, c));
-          accBody.appendChild(tr);
+          tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" value="${r.K!==null && r.K!==''?r.K:''}" /></td>`;
+          b4.appendChild(tr);
         }
-      }
+      });
+      t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
 
-      // Meals: J10..K20
-      const mealsBody = document.querySelector('#tblMeals tbody');
-      mealsBody.innerHTML = '';
-      for(let r=10; r<=20; r++){
-        const j = get(ws, `J${r}`);
-        const k = get(ws, `K${r}`);
-        if(j || k){
-          const tr = document.createElement('tr');
-          tr.appendChild(makeCell('td', `J${r}`, j));
-          tr.appendChild(makeCell('td', `K${r}`, k));
-          mealsBody.appendChild(tr);
-        }
-      }
+      // Additional summary panel
+      $('#reviewSummary').textContent = `Estimated total: $ ${fmt(appState.preview.summaryTotal)}`;
 
-      // Guide: L12..M13
-      const guideBody = document.querySelector('#tblGuide tbody');
-      guideBody.innerHTML = '';
-      for(let r=12; r<=13; r++){
-        const l = get(ws, `L${r}`);
-        const m = get(ws, `M${r}`);
-        if(l || m){
-          const tr = document.createElement('tr');
-          tr.appendChild(makeCell('td', `L${r}`, l));
-          tr.appendChild(makeCell('td', `M${r}`, m));
-          guideBody.appendChild(tr);
-        }
-      }
-    }
+      // wire up editable inputs to update preview object immediately
+      Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
+        inp.addEventListener('input', (ev)=>{
+          const p = inp.dataset.path;
+          const val = parseNumber(inp.value) ?? (inp.value===""? "": inp.value);
+          // Update the preview rows accordingly (we'll prefer numeric update)
+          if(p.startsWith('F:')){
+            const rowNum = Number(inp.dataset.row);
+            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+            if(rowObj) rowObj.G = val;
+          } else if(p.startsWith('H:')){
+            const rowNum = Number(inp.dataset.row);
+            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+            if(rowObj) rowObj.I = val;
+          } else if(p.startsWith('J:')){
+            const rowNum = Number(inp.dataset.row);
+            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+            if(rowObj) rowObj.K = val;
+          } else if(p.startsWith('accom:')){
+            // pattern: accom:PLACE:total
+            const parts = p.split(':');
+            const place = parts[1];
+            const rowIndex = Number(inp.dataset.row);
+            // Update accommodation model
+            const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
+            if(ac){
+              // if user changed total, reflect in C and D, but keep nights/price unchanged.
+              const nVal = parseNumber(inp.value);
+              ac.total = (nVal===null ? "" : nVal);
+              // update computed D field displayed (we'll recompute overall summary when user stops typing)
+              // Update rows model
+              const rowsRow = appState.preview.rows.find(x=>x.row===rowIndex);
+              if(rowsRow) { rowsRow.C = ac.total; rowsRow.D = (ac.total!==""? Math.round(ac.total*0.7*100)/100 : ""); }
+            }
+          }
+          // update summary quickly
+          recomputeSummaryAndRender();
+        });
+      });
 
-    function showResults(){
-      if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const sheetName = appState.workbook.SheetNames[0];
-      const ws = appState.workbook.Sheets[sheetName];
-      $('#resQuoteName').textContent = appState.quotationName || '(Untitled)';
-      buildTableRows(ws);
+      // scroll to top of review
       showStep(5);
     }
 
-    // ---------- NEW: Save edited table cells back to worksheet ----------
-    function saveEditsIntoWorkbook(){
-      if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const sheetName = appState.workbook.SheetNames[0];
-      const ws = appState.workbook.Sheets[sheetName];
-      const cells = document.querySelectorAll('[data-cell]');
-      cells.forEach(cell=>{
-        const addr = cell.dataset.cell;
-        const raw = cell.textContent ?? '';
-        const num = parseFloat(raw);
-        if(!isNaN(num) && raw.trim() !== ''){
-          set(ws, addr, num);
-        } else {
-          set(ws, addr, raw);
-        }
-      });
-      ensureRef(ws, 'A1', 'M40');
+    function recomputeSummaryAndRender(){
+      // recompute summaryTotal from current preview rows
+      let total = 0;
+      for(const r of appState.preview.rows){
+        total += (parseNumber(r.C) || 0) + (parseNumber(r.G) || 0) + (parseNumber(r.I) || 0) + (parseNumber(r.K) || 0);
+      }
+      appState.preview.summaryTotal = Math.round(total*100)/100;
+      $('#reviewSummary').textContent = `Estimated total: $ ${fmt(appState.preview.summaryTotal)}`;
     }
 
-    // ---------- NEW: Download current workbook (no recompute) ----------
-    function downloadCurrentWorkbook(){
-      if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
-      const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (appState.quotationName || 'Quotation') + '.xlsx';
-      document.body.appendChild(a); a.click(); a.remove();
+    // ---------- Utility for sanitized text -->
+    function escapeHtml(s){
+      if(!s && s!==0) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // ---------- Collect Step4 and move to Results ----------
-    document.getElementById('downloadBtn').onclick = ()=>{
-      // Counters
+    // ---------- When user clicks "Show Review & Edit" (downloadBtn) ----------
+    document.getElementById('downloadBtn').addEventListener('click', ()=>{
+      // Gather counters and trips as in original
       appState.cairoCounters.apt   = document.getElementById('Cairoapt').value;
       appState.cairoCounters.fd    = document.getElementById('Cairofd').value;
       appState.cairoCounters.night = document.getElementById('CairoNight').value;
 
-      // Trips
       appState.trips.CairoGiza = getChecked('#cbCairoGizaTrips');
       appState.trips.Sharm     = getChecked('#cbSharmTrips');
       appState.trips.Luxor     = getChecked('#cbLuxorTrips');
       appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
-      // Write to workbook (no download), then show results
-      writeExcelToWorkbookOnly();
-      showResults();
-    };
-
-    // ---------- Step 5 buttons ----------
-    document.getElementById('back4').onclick = ()=> showStep(4);
-    document.getElementById('btnSaveEdits').onclick = ()=>{
-      saveEditsIntoWorkbook();
-      alert('Edits saved into the workbook (in memory). You can now download or keep editing.');
-    };
-    document.getElementById('btnSaveAndDownload').onclick = ()=>{
-      saveEditsIntoWorkbook();
-      downloadCurrentWorkbook();
-    };
-
-    // ---------- Also collect Step1/Step4 site lists on navigation back/forward ----------
-    document.getElementById('back1').addEventListener('click', ()=>{
-      // nothing extra, keep state as-is
+      // compute and render a full review page (no download)
+      renderReviewPage();
     });
+
+    // back button from review to steps
+    document.getElementById('backToSteps').addEventListener('click', ()=>{
+      showStep(4);
+    });
+
+    // apply edits button (push edits back to appState main structures where reasonable)
+    document.getElementById('applyEdits').addEventListener('click', ()=>{
+      // We'll map editable preview changes back to appState where possible:
+      // - Accommodation totals -> if user changed totals, we attempt to update price (price = total / nights if nights>0)
+      let changes = 0;
+      appState.preview.accommodationRows.forEach(ac=>{
+        const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
+        if(rowsRow && parseNumber(rowsRow.C) !== null){
+          const newTotal = parseNumber(rowsRow.C);
+          if(ac.nights > 0 && newTotal !== "" && ac.nights>0){
+            const newPrice = Math.round((newTotal / ac.nights)*100)/100;
+            appState.accommodation[ac.place].price = String(newPrice);
+            changes++;
+          }
+        }
+      });
+
+      // - For site / transfers / meals edits user changed numeric values in preview rows; push back where appropriate:
+      appState.preview.rows.forEach(r=>{
+        // if this row contains a site (F) and user edited G numeric, we leave it in preview only (can't map price to Sites sheet reliably)
+        // if this row contains meals (J) and K changed, try to update matching meal quantity by dividing K / tier (we don't have tier in J text)
+        // For simplicity: we only persist accommodation price changes above.
+      });
+
+      alert(`Applied edits to state (updated ${changes} accommodation prices). You can now re-generate the report to reflect changes.`);
+      // recompute preview to reflect changed prices
+      computePreviewModel();
+      renderReviewPage();
+    });
+
+    // ---------- Initial wiring to keep original collection flow ----------
+
+    // When entering toStep4 earlier, we stored meals values; ensure the selects reflect appState when loaded
+    document.getElementById('toStep3').addEventListener('click', ()=>{
+      // keep existing behavior already wires values
+    });
+
+    // ---------- small helper: on page load, prefill some defaults (optional) ----------
+    (function initDefaults(){
+      // nothing forced here; keep UI ready
+    })();
+
+    // End of script
   </script>
 </body>
 </html>
