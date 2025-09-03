@@ -334,14 +334,12 @@
   <script>
     // ---------- State (Session-like) ----------
     const appState = {
-      workbook: null, // SheetJS workbook
+      workbook: null,
       sheetName: null,
       quotationName: "",
-      // Step1:
       flightTicket: "",
-      sites: [], // sequence for F10.. etc
-      // Step2:
-      accommodation: { // nights & price per place
+      sites: [],
+      accommodation: {
         "Cairo/Giza": { nights: "0", price: "0" },
         "Sharm el Sheikh": { nights: "0", price: "0" },
         "Luxor": { nights: "0", price: "0" },
@@ -349,33 +347,13 @@
         "Hurghada": { nights: "0", price: "0" },
         "Nile Cruise": { nights: "0", price: "0" },
       },
-      // Step3:
       guideTicket: "",
       guideAccomodation: "",
-      meals: { // tiers as strings "300"..."2000" -> count "0"-"6"
-        "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0"
-      },
-      // Step4:
+      meals: { "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0" },
       cairoCounters: { apt:"0", fd:"0", night:"0" },
-      trips: { // checkbox groups
-        "CairoGiza": [],
-        "Sharm": [],
-        "Luxor": [],
-        "Aswan": []
-      },
-
-      // Lookups parsed from workbook
-      lookups: {
-        sites: {},        // name -> { price: number, newPrice: number }
-        transfers: {}     // name -> { before: [p1,p2,p3], after: [p1',p2',p3'] }
-      },
-
-      // computed preview model
-      preview: {
-        rows: [], // array for rowIndex 10..40 with fields for B..M-ish
-        accommodationRows: [], // rows 10..15
-        mealRows: []
-      }
+      trips: { "CairoGiza": [], "Sharm": [], "Luxor": [], "Aswan": [] },
+      lookups: { sites: {}, transfers: {} },
+      preview: { rows: [], accommodationRows: [], mealRows: [], summaryTotal: 0 }
     };
 
     // ---------- Helpers ----------
@@ -383,15 +361,8 @@
     function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
     function optionRange(sel, from, to, withZeroValue=true) {
       sel.innerHTML = "";
-      for (let i=from;i<=to;i++){
-        const opt=document.createElement('option');
-        opt.value=String(i); opt.text=String(i);
-        sel.appendChild(opt);
-      }
-      if (withZeroValue && from!==0) {
-        const zero=document.createElement('option'); zero.value="0"; zero.text="0";
-        sel.insertBefore(zero, sel.firstChild);
-      }
+      for (let i=from;i<=to;i++){ const opt=document.createElement('option'); opt.value=String(i); opt.text=String(i); sel.appendChild(opt); }
+      if (withZeroValue && from!==0) { const zero=document.createElement('option'); zero.value="0"; zero.text="0"; sel.insertBefore(zero, sel.firstChild); }
     }
     function optionList(sel, arr, includeZero=true){
       sel.innerHTML="";
@@ -399,7 +370,8 @@
       arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); });
     }
     function renderChecks(container, items){
-      const el=$(container); el.innerHTML="";
+      const el=document.querySelector(container); if(!el) return;
+      el.innerHTML="";
       items.forEach(txt=>{
         const id = container.slice(1) + "_" + txt.replace(/\W+/g,'_');
         const lbl=document.createElement('label');
@@ -424,7 +396,6 @@
       Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
       Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
       Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
-
       CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
       SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
       LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
@@ -454,7 +425,7 @@
     const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
     const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
 
-    function fillPrice(selId, arr){ const el=document.getElementById(selId); el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
+    function fillPrice(selId, arr){ const el=document.getElementById(selId); if(!el) return; el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
     fillPrice('ddlPriceCairoGiza', price30to150);
     fillPrice('ddlPriceSharm', price30to150);
     fillPrice('ddlPriceLuxor', price30to150);
@@ -487,9 +458,8 @@
         const data = new Uint8Array(evt.target.result);
         try {
           appState.workbook = XLSX.read(data, { type:'array' });
-          // choose first sheet as the main (like EPPlus earlier)
           appState.sheetName = appState.workbook.SheetNames[0];
-          parseLookupsFromWorkbook(); // parse Sites & Transfers into appState.lookups
+          parseLookupsFromWorkbook();
           alert('Excel uploaded and lookups parsed successfully.');
         } catch (err) {
           console.error(err);
@@ -507,18 +477,15 @@
     }
 
     function parseLookupsFromWorkbook(){
-      // Sites
       const sitesSheetName = findSheetByNameLike('site') || findSheetByNameLike('sites');
       appState.lookups.sites = {};
       if(sitesSheetName){
         const sht = appState.workbook.Sheets[sitesSheetName];
         const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
-        // assume header on row 1, data from row 2 onwards
         for(let r=1;r<rows.length;r++){
           const row = rows[r];
           const name = row[0]; if(!name) continue;
           const price = parseNumber(row[1]) || 0;
-          // if sheet column 3 exists and is numeric, use it; else compute B * 1.1
           const newPriceRaw = parseNumber(row[2]);
           const newPrice = newPriceRaw || Math.round(price * 1.1 * 100)/100;
           appState.lookups.sites[String(name).trim()] = { price, newPrice };
@@ -527,59 +494,46 @@
         console.warn('Sites sheet not found; site lookups will be empty.');
       }
 
-      // Transfers
       const transfersSheetName = findSheetByNameLike('transfer') || findSheetByNameLike('transfers');
       appState.lookups.transfers = {};
       if(transfersSheetName){
         const sht = appState.workbook.Sheets[transfersSheetName];
         const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
-        // rows[0] often contains header and maybe a multiplier value; but we parse per-row formulas or numeric
         for(let r=1;r<rows.length;r++){
           const row = rows[r];
           const nameBefore = row[0];
-          // sometimes transfer name appears again at col 4 or 5; we'll use nameBefore || row[4]
           const transferName = (nameBefore || row[4]);
           if(!transferName) continue;
           const b = parseNumber(row[1]);
           const c = parseNumber(row[2]);
           const d = parseNumber(row[3]);
           const beforeArr = [b||0, c||0, d||0];
-
-          // For after-price columns (often columns 5..7 or 6..8 depending on sheet), row[5],row[6],row[7] may be formula strings like "=B2*110%"
-          // We'll try this order: row[5..7] (zero-based index)
           let after = [null,null,null];
-          // If explicit numeric present, take it. Otherwise try parse multiplier from formula string.
           for(let j=5;j<=7;j++){
             const cellVal = row[j];
             if(typeof cellVal === 'number') { after[j-5] = cellVal; }
             else if(typeof cellVal === 'string' && cellVal.startsWith('=')){
-              // try to extract multiplier like "*110%" or "*130%"
               const m = parseMultiplierFromFormula(cellVal);
               if(m) after[j-5] = Math.round(beforeArr[j-5]*m*100)/100;
             }
           }
-          // If after values still null, fallback to a default multiplier in header row if present (rows[0])
           for(let k=0;k<3;k++){
             if(after[k] === null){
-              // try header multiplier
               const head = rows[0];
-              const headerMultiplierCell = head && head[head.length-1]; // last cell maybe contains multiplier like 1.1
+              const headerMultiplierCell = head && head[head.length-1];
               const headerMultiplier = parseNumber(headerMultiplierCell) || 1.1;
               after[k] = Math.round(beforeArr[k] * headerMultiplier * 100)/100;
             }
           }
-
           appState.lookups.transfers[String(transferName).trim()] = { before: beforeArr, after: after };
         }
       } else {
         console.warn('Transfers sheet not found; transfers lookup empty.');
       }
-      // debug
       console.log('Parsed lookups:', appState.lookups);
     }
 
     function parseMultiplierFromFormula(formula){
-      // formula examples: "=B2*110%" or "=B60*130%" or "=B2*1.10"
       try {
         const matchPct = formula.match(/\*(\d+)%/);
         if(matchPct) return (Number(matchPct[1]) / 100);
@@ -590,12 +544,11 @@
     }
 
     // ---------- Navigation handlers ----------
-    document.getElementById('toStep2').onclick = ()=>{
+    document.getElementById('toStep2').onclick = ()=> {
       if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
       appState.quotationName = $('#quotationName').value.trim();
       if(!appState.quotationName){ alert('Please provide a Quotation Name.'); return; }
       appState.flightTicket = $('#flightTicket').value.trim();
-      // collect all first page sites
       appState.sites = []
         .concat(getChecked('#cbPyramids'))
         .concat(getChecked('#cbSakkara'))
@@ -608,8 +561,7 @@
       showStep(2);
     };
     document.getElementById('back1').onclick = ()=> showStep(1);
-    document.getElementById('toStep3').onclick = ()=>{
-      // Persist accommodation selections
+    document.getElementById('toStep3').onclick = ()=> {
       appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
       appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
       appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
@@ -625,7 +577,7 @@
       showStep(3);
     };
     document.getElementById('back2').onclick = ()=> showStep(2);
-    document.getElementById('toStep4').onclick = ()=>{
+    document.getElementById('toStep4').onclick = ()=> {
       appState.guideTicket = $('#TextBoxGuideTicket').value.trim();
       appState.guideAccomodation = $('#TextBoxGuideAccomodation').value.trim();
       mealTiers.forEach(tier=> appState.meals[tier] = document.getElementById('ddlMeals'+tier).value );
@@ -654,7 +606,6 @@
       const sheetName = appState.workbook.SheetNames[0];
       const ws = appState.workbook.Sheets[sheetName];
 
-      // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
       let rowF = 10;
       const ft = n(appState.flightTicket);
       if(ft !== null){
@@ -668,13 +619,11 @@
         rowF++;
       }
 
-      // --- Guide Extras (L/M) exactly like EPPlus
       const guideTicket = n(appState.guideTicket);
       if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
       const guideAcc = n(appState.guideAccomodation);
       if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
 
-      // --- Trips Column H, rows 10..40
       let rowH = 10;
       const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
       const cntApt = n(appState.cairoCounters.apt) || 0;
@@ -683,11 +632,8 @@
       for(let i=0;i<cntFd;i++) addH("Cairo fd");
       const cntNight = n(appState.cairoCounters.night) || 0;
       for(let i=0;i<cntNight;i++) addH("Cairo night");
-
-      // Then each checked item once, in order:
       [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
 
-      // --- Accommodation (FillAccommodationData clone)
       function fillAccommodation(place, nights, price, rowIndex){
         const ni = n(nights) || 0;
         const pi = n(price) || 0;
@@ -706,7 +652,6 @@
       fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
       fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
 
-      // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20
       let currentRowJ = 10, currentRowK = 10;
       function writeMeals(mealCategory, mealsQuantityStr){
         const q = n(mealsQuantityStr);
@@ -717,12 +662,10 @@
         }
       }
       mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K like C#
+      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "");
 
-      // Ensure sheet ref includes up to M40 (so added cells are visible)
       ensureRef(ws, 'A1', 'M40');
 
-      // Download (kept for parity but not used in Review flow)
       const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
       const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
@@ -733,13 +676,10 @@
 
     // ---------- Compute preview model (mimic your Excel formulas) ----------
     function computePreviewModel(){
-      // Clear previous
       appState.preview.rows = [];
       appState.preview.accommodationRows = [];
       appState.preview.mealRows = [];
 
-      // find "Quotation new" sheet date cell J2 and E3 people from workbook if present so we can replicate formula logic.
-      // We'll read J2 and E3 from workbook 'sheetName' if available, otherwise fall back to defaults (J2: today, E3: 2)
       let sheetRaw = null;
       if(appState.workbook && appState.sheetName){
         sheetRaw = appState.workbook.Sheets[appState.sheetName];
@@ -750,31 +690,25 @@
         const cell = sheetRaw[a1];
         if(!cell) return null;
         if(cell.v !== undefined) return cell.v;
-        // fallback to f maybe
         return null;
       }
-      // People in E3 (if available in workbook) - but the UI also doesn't expose E3; user earlier told E3 is used to decide transfers column: we will prefer workbook's E3 if present, otherwise fallback to 2.
+
       const workbookPeople = readCellA1('E3');
-      const people = parseNumber(workbookPeople) || 2; // fallback
-      // Date in J2, default to today
+      const people = parseNumber(workbookPeople) || 2;
       const workbookDate = readCellA1('J2');
-      // workbookDate may be an Excel serial date; sheetJS sometimes returns Date object if cell type is date. We'll attempt to construct Date.
       let j2Date = null;
       if(workbookDate instanceof Date) j2Date = workbookDate;
-      else if(typeof workbookDate === 'number') { j2Date = XLSX.SSF.parse_date_code(workbookDate); if(j2Date) j2Date = new Date(Date.UTC(j2Date.y, j2Date.m-1, j2Date.d)); }
+      else if(typeof workbookDate === 'number') { const dd = XLSX.SSF.parse_date_code(workbookDate); if(dd) j2Date = new Date(Date.UTC(dd.y, dd.m-1, dd.d)); }
       else if(typeof workbookDate === 'string') { const d = new Date(workbookDate); if(!isNaN(d)) j2Date = d; }
-      if(!j2Date) j2Date = new Date(); // fallback: today
+      if(!j2Date) j2Date = new Date();
 
-      // threshold date for new site prices / transfer rates
-      const thresholdDate = new Date(2025,10,1); // Nov 1, 2025 (month 10 is November zero-based)
+      const thresholdDate = new Date(2025,10,1);
 
-      // Build F-list (Flight Ticket option then selected site names)
       const fList = [];
       const ft = parseNumber(appState.flightTicket);
       if(ft !== null){ fList.push({ label: 'Flight Ticket', value: ft }); }
       for(const s of appState.sites) { fList.push({ label: s, value: null }); }
 
-      // Build H-list (transfers): add counts of apt, fd, night then checked trips in order
       const hList = [];
       const aptCnt = parseNumber(appState.cairoCounters.apt) || 0;
       for(let i=0;i<aptCnt;i++) hList.push('Cairo apt');
@@ -782,21 +716,18 @@
       for(let i=0;i<fdCnt;i++) hList.push('Cairo fd');
       const nightCnt = parseNumber(appState.cairoCounters.night) || 0;
       for(let i=0;i<nightCnt;i++) hList.push('Cairo night');
-      // then checked trips:
       [...(appState.trips.CairoGiza||[]), ...(appState.trips.Sharm||[]), ...(appState.trips.Luxor||[]), ...(appState.trips.Aswan||[])].forEach(t=>hList.push(t));
 
-      // Accommodation rows: fixed mapping to B10..C15 as in original
       const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
       for(let i=0;i<accomOrder.length;i++){
         const place = accomOrder[i];
-        const rowIndex = 10 + i; // B10..B15
+        const rowIndex = 10 + i;
         const nights = parseNumber(appState.accommodation[place].nights) || 0;
         const price = parseNumber(appState.accommodation[place].price) || 0;
         const total = (nights>0 && price>0) ? (nights * price) : "";
         appState.preview.accommodationRows.push({ rowIndex, place, nights, price, total });
       }
 
-      // Meals: build J/K starting at 10
       let mealRowIndex = 10;
       for(const tier of mealTiers){
         const qty = parseNumber(appState.meals[tier]) || 0;
@@ -807,19 +738,11 @@
         }
       }
 
-      // Build rows 10..40 for columns B..M modeled; we will create objects with keys for B,C,D,F,G,H,I,J,K
       const rows = [];
       for(let r=10; r<=40; r++){
-        rows.push({
-          row: r,
-          B: null, C: null, D: null,
-          F: null, G: null,
-          H: null, I: null,
-          J: null, K: null
-        });
+        rows.push({ row: r, B: null, C: null, D: null, F: null, G: null, H: null, I: null, J: null, K: null });
       }
 
-      // Fill B/C from accommodationRows (rows 10..15)
       for(const ac of appState.preview.accommodationRows){
         const idx = ac.rowIndex - 10;
         rows[idx].B = `${ac.nights>0 ? ac.nights : ''}${ac.nights>0 ? ' nights ' : ''}${ac.place}`;
@@ -827,49 +750,41 @@
         rows[idx].D = (ac.total !== "" && ac.total !== null) ? Math.round(ac.total * 0.7 * 100)/100 : "";
       }
 
-      // Fill J/K from mealRows
       for(const m of appState.preview.mealRows){
         const idx = m.rowIndex - 10;
         rows[idx].J = `${m.qty} ${m.tier} meals`;
         rows[idx].K = m.total;
       }
 
-      // Fill F/G: flight ticket + site names
       for(let i=0;i<fList.length;i++){
         const rowIndex = 10 + i;
         if(rowIndex>40) break;
         rows[rowIndex - 10].F = fList[i].label;
-        // compute G:
         if(fList[i].label === 'Flight Ticket'){
           rows[rowIndex - 10].G = (fList[i].value !== null) ? Number(fList[i].value) : "";
         } else {
-          // lookup site price
           const sname = fList[i].label;
           const siteLookup = appState.lookups.sites[sname];
           if(siteLookup){
             const useNew = (j2Date >= thresholdDate);
             rows[rowIndex - 10].G = useNew ? siteLookup.newPrice : siteLookup.price;
           } else {
-            rows[rowIndex - 10].G = ""; // unknown site
+            rows[rowIndex - 10].G = "";
           }
         }
       }
 
-      // Fill H/I for transfers
       for(let i=0;i<hList.length;i++){
         const rowIndex = 10 + i;
         if(rowIndex>40) break;
         const tName = hList[i];
         rows[rowIndex - 10].H = tName;
-        if(!tName){
-          rows[rowIndex - 10].I = "";
-        } else {
-          // choose before/after based on j2Date
+        if(!tName){ rows[rowIndex - 10].I = ""; }
+        else {
           const useAfter = (j2Date >= thresholdDate);
           const tr = appState.lookups.transfers[tName];
           if(tr){
             const arr = useAfter ? tr.after : tr.before;
-            // choose index by people:
             const idx = (people <= 7) ? 0 : (people <= 15 ? 1 : 2);
             rows[rowIndex - 10].I = arr[idx] || "";
           } else {
@@ -878,18 +793,14 @@
         }
       }
 
-      // For any row where C exists and numeric, ensure D=0.7*C
       for(const r of rows){
         const cVal = parseNumber(r.C);
         if(cVal !== null) r.D = Math.round(cVal * 0.7 * 100)/100;
       }
 
-      // Save preview rows
       appState.preview.rows = rows;
 
-      // compute a simple summary total
       let summaryTotal = 0;
-      // Sum accommodation C, site G, transfer I, meals K
       for(const r of rows){
         const c = parseNumber(r.C) || 0;
         const g = parseNumber(r.G) || 0;
@@ -921,7 +832,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${a.rowIndex}</td>
           <td>${a.place} — <span class="small">nights: ${a.nights} @ ${a.price}</span></td>
-          <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.total===\"\"?\"\":a.total}"></td>
+          <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.total===""?"":a.total}"></td>
           <td class="numCell">${fmt(a.total!==""?Math.round(a.total*0.7*100)/100:"")}</td>`;
         b1.appendChild(tr);
       });
@@ -938,7 +849,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${r.row}</td>
             <td>${escapeHtml(r.F)}</td>
-            <td class="numCell"><input class="editable" data-path="F:${r.row}" value="${r.G!==null && r.G!==''?r.G:''}" /></td>`;
+            <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${r.G!==null && r.G!==''?r.G:''}" /></td>`;
           b2.appendChild(tr);
         }
       });
@@ -954,7 +865,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${r.row}</td>
             <td>${escapeHtml(r.H)}</td>
-            <td class="numCell"><input class="editable" data-path="H:${r.row}" value="${r.I!==null && r.I!==''?r.I:''}" /></td>`;
+            <td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${r.I!==null && r.I!==''?r.I:''}" /></td>`;
           b3.appendChild(tr);
         }
       });
@@ -968,7 +879,7 @@
       rows.forEach(r=>{
         if(r.J !== null && r.J !== ""){
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" value="${r.K!==null && r.K!==''?r.K:''}" /></td>`;
+          tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${r.K!==null && r.K!==''?r.K:''}" /></td>`;
           b4.appendChild(tr);
         }
       });
@@ -982,7 +893,6 @@
         inp.addEventListener('input', (ev)=>{
           const p = inp.dataset.path;
           const val = parseNumber(inp.value) ?? (inp.value===""? "": inp.value);
-          // Update the preview rows accordingly (we'll prefer numeric update)
           if(p.startsWith('F:')){
             const rowNum = Number(inp.dataset.row);
             const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
@@ -996,33 +906,25 @@
             const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
             if(rowObj) rowObj.K = val;
           } else if(p.startsWith('accom:')){
-            // pattern: accom:PLACE:total
             const parts = p.split(':');
             const place = parts[1];
             const rowIndex = Number(inp.dataset.row);
-            // Update accommodation model
             const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
             if(ac){
-              // if user changed total, reflect in C and D, but keep nights/price unchanged.
               const nVal = parseNumber(inp.value);
               ac.total = (nVal===null ? "" : nVal);
-              // update computed D field displayed (we'll recompute overall summary when user stops typing)
-              // Update rows model
               const rowsRow = appState.preview.rows.find(x=>x.row===rowIndex);
               if(rowsRow) { rowsRow.C = ac.total; rowsRow.D = (ac.total!==""? Math.round(ac.total*0.7*100)/100 : ""); }
             }
           }
-          // update summary quickly
           recomputeSummaryAndRender();
         });
       });
 
-      // scroll to top of review
       showStep(5);
     }
 
     function recomputeSummaryAndRender(){
-      // recompute summaryTotal from current preview rows
       let total = 0;
       for(const r of appState.preview.rows){
         total += (parseNumber(r.C) || 0) + (parseNumber(r.G) || 0) + (parseNumber(r.I) || 0) + (parseNumber(r.K) || 0);
@@ -1031,7 +933,7 @@
       $('#reviewSummary').textContent = `Estimated total: $ ${fmt(appState.preview.summaryTotal)}`;
     }
 
-    // ---------- Utility for sanitized text -->
+    // ---------- Utility for sanitized text ----------
     function escapeHtml(s){
       if(!s && s!==0) return '';
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1039,7 +941,6 @@
 
     // ---------- When user clicks "Show Review & Edit" (downloadBtn) ----------
     document.getElementById('downloadBtn').addEventListener('click', ()=>{
-      // Gather counters and trips as in original
       appState.cairoCounters.apt   = document.getElementById('Cairoapt').value;
       appState.cairoCounters.fd    = document.getElementById('Cairofd').value;
       appState.cairoCounters.night = document.getElementById('CairoNight').value;
@@ -1049,19 +950,14 @@
       appState.trips.Luxor     = getChecked('#cbLuxorTrips');
       appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
-      // compute and render a full review page (no download)
       renderReviewPage();
     });
 
     // back button from review to steps
-    document.getElementById('backToSteps').addEventListener('click', ()=>{
-      showStep(4);
-    });
+    document.getElementById('backToSteps').addEventListener('click', ()=>{ showStep(4); });
 
     // apply edits button (push edits back to appState main structures where reasonable)
     document.getElementById('applyEdits').addEventListener('click', ()=>{
-      // We'll map editable preview changes back to appState where possible:
-      // - Accommodation totals -> if user changed totals, we attempt to update price (price = total / nights if nights>0)
       let changes = 0;
       appState.preview.accommodationRows.forEach(ac=>{
         const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
@@ -1074,33 +970,14 @@
           }
         }
       });
-
-      // - For site / transfers / meals edits user changed numeric values in preview rows; push back where appropriate:
-      appState.preview.rows.forEach(r=>{
-        // if this row contains a site (F) and user edited G numeric, we leave it in preview only (can't map price to Sites sheet reliably)
-        // if this row contains meals (J) and K changed, try to update matching meal quantity by dividing K / tier (we don't have tier in J text)
-        // For simplicity: we only persist accommodation price changes above.
-      });
-
       alert(`Applied edits to state (updated ${changes} accommodation prices). You can now re-generate the report to reflect changes.`);
-      // recompute preview to reflect changed prices
       computePreviewModel();
       renderReviewPage();
     });
 
-    // ---------- Initial wiring to keep original collection flow ----------
-
-    // When entering toStep4 earlier, we stored meals values; ensure the selects reflect appState when loaded
-    document.getElementById('toStep3').addEventListener('click', ()=>{
-      // keep existing behavior already wires values
-    });
-
     // ---------- small helper: on page load, prefill some defaults (optional) ----------
-    (function initDefaults(){
-      // nothing forced here; keep UI ready
-    })();
+    (function initDefaults(){ /* leave empty - UI shows defaults */ })();
 
-    // End of script
   </script>
 </body>
 </html>
