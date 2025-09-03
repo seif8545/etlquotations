@@ -37,7 +37,12 @@
     .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; }
     .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#333; }
   </style>
+
+  <!-- keep SheetJS for reading / existing logic -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- ExcelJS browser build for styled export -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -472,7 +477,7 @@
       if(confirm('Clear all current inputs?')) location.reload();
     };
 
-    // ---------- Excel Write (mirror EPPlus logic) ----------
+    // ---------- Excel helpers ----------
     function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
     function set(ws, addr, value){
       ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
@@ -487,86 +492,148 @@
       ws['!ref'] = XLSX.utils.encode_range({s,e});
     }
 
-    function writeExcelAndDownload(){
+    // ---------- Styled Export using ExcelJS (preserve cell placements) ----------
+    async function writeExcelAndDownload(){
       if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const sheetName = appState.workbook.SheetNames[0];
-      const ws = appState.workbook.Sheets[sheetName];
 
-      // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
-      let rowF = 10;
-      const ft = n(appState.flightTicket);
-      if(ft !== null){
-        set(ws, `F${rowF}`, "Flight Ticket");
-        set(ws, `G${rowF}`, ft);
-        rowF++;
-      }
-      for(const item of appState.sites){
-        if(rowF > 40) break;
-        set(ws, `F${rowF}`, item);
-        rowF++;
-      }
+      try {
+        const sheetName = appState.workbook.SheetNames[0];
+        const xlsxSheet = appState.workbook.Sheets[sheetName];
 
-      // --- Guide Extras (L/M) exactly like EPPlus
-      const guideTicket = n(appState.guideTicket);
-      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
-      const guideAcc = n(appState.guideAccomodation);
-      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+        // make sure the sheet ref covers expected area (like earlier)
+        ensureRef(xlsxSheet, 'A1', 'M40');
 
-      // --- Trips Column H, rows 10..40
-      let rowH = 10;
-      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
-      const cntApt = n(appState.cairoCounters.apt) || 0;
-      for(let i=0;i<cntApt;i++) addH("Cairo apt");
-      const cntFd = n(appState.cairoCounters.fd) || 0;
-      for(let i=0;i<cntFd;i++) addH("Cairo fd");
-      const cntNight = n(appState.cairoCounters.night) || 0;
-      for(let i=0;i<cntNight;i++) addH("Cairo night");
+        // decode used range
+        const rangeStr = xlsxSheet['!ref'] || 'A1:A1';
+        const range = XLSX.utils.decode_range(rangeStr);
 
-      // Then each checked item once, in order:
-      [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+        // create ExcelJS workbook & worksheet
+        const excelWorkbook = new ExcelJS.Workbook();
+        const excelSheet = excelWorkbook.addWorksheet(sheetName);
 
-      // --- Accommodation (FillAccommodationData clone)
-      function fillAccommodation(place, nights, price, rowIndex){
-        const ni = n(nights) || 0;
-        const pi = n(price) || 0;
-        if(ni>0 && pi>0){
-          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
-          set(ws, `C${rowIndex}`, ni * pi);
-        } else {
-          set(ws, `B${rowIndex}`, "");
-          set(ws, `C${rowIndex}`, "");
+        // copy merges if present
+        const merges = xlsxSheet['!merges'] || [];
+        merges.forEach(m => {
+          // SheetJS merge object has s:e with r,c zero-based
+          const startRow = m.s.r + 1, startCol = m.s.c + 1, endRow = m.e.r + 1, endCol = m.e.c + 1;
+          try { excelSheet.mergeCells(startRow, startCol, endRow, endCol); } catch(e) { /* ignore bad merges */ }
+        });
+
+        // attempt to copy column widths if present
+        if (xlsxSheet['!cols']) {
+          excelSheet.columns = xlsxSheet['!cols'].map(c=>{
+            // SheetJS may store wpx (pixels) or wch (char width). Convert roughly to Excel width.
+            const approx = (c && c.wch) ? c.wch : (c && c.wpx ? Math.round(c.wpx/7) : undefined);
+            return { width: approx || 15 };
+          });
         }
-      }
-      fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
-      fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
-      fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
-      fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
-      fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
-      fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
 
-      // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20
-      let currentRowJ = 10, currentRowK = 10;
-      function writeMeals(mealCategory, mealsQuantityStr){
-        const q = n(mealsQuantityStr);
-        if(q && q>0){
-          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
-          set(ws, `K${currentRowK}`, q * n(mealCategory));
-          currentRowJ++; currentRowK++;
+        // copy cells values & formulas
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          const row = excelSheet.getRow(R + 1);
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            const srcCell = xlsxSheet[addr];
+            const destCell = row.getCell(C + 1);
+            if (!srcCell) { destCell.value = null; continue; }
+
+            // formula
+            if (srcCell.f) {
+              destCell.value = { formula: srcCell.f, result: (srcCell.v !== undefined ? srcCell.v : null) };
+            } else {
+              // set by type
+              if (srcCell.t === 'n') destCell.value = srcCell.v;
+              else if (srcCell.t === 'b') destCell.value = !!srcCell.v;
+              else if (srcCell.t === 'd') destCell.value = (srcCell.v instanceof Date) ? srcCell.v : new Date(srcCell.v);
+              else destCell.value = srcCell.v;
+            }
+          }
+          row.commit();
         }
+
+        // decide if we have a header row: check first row for any non-empty
+        let hasHeader = false;
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const v = excelSheet.getRow(range.s.r + 1).getCell(C + 1).value;
+          if (v !== null && v !== undefined && String(v).trim() !== '') { hasHeader = true; break; }
+        }
+
+        // Apply styling: nice header (if present), subtle stripes, borders and spacing
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          const row = excelSheet.getRow(R + 1);
+          const isHeader = hasHeader && (R === range.s.r);
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell = row.getCell(C + 1);
+
+            // font
+            cell.font = {
+              name: 'Calibri',
+              size: 11,
+              bold: isHeader ? true : false,
+              color: isHeader ? { argb: 'FFFFFFFF' } : undefined
+            };
+
+            // alignment & wrap
+            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+
+            // fill: header = primary blue, else subtle stripe
+            if (isHeader) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0B5FFF' } }; // strong blue header
+            } else {
+              const stripe = ((R - range.s.r) % 2 === 1);
+              if (stripe) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FF' } };
+            }
+
+            // border
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+              left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+              bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+              right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+            };
+          }
+          // gentle row height for breathing room
+          row.height = 18;
+          row.commit();
+        }
+
+        // Auto-fit columns within a reasonable cap
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          let maxLen = 8;
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cell = excelSheet.getRow(R + 1).getCell(C + 1);
+            let val = cell.value;
+            if (val == null) val = '';
+            // handle value object shapes
+            if (typeof val === 'object') {
+              if (val.formula && val.result !== undefined) val = String(val.result);
+              else if (val.richText) val = val.richText.map(t => t.text).join('');
+              else val = String(val);
+            }
+            const len = String(val).length;
+            if (len > maxLen) maxLen = len;
+          }
+          const width = Math.min(50, maxLen + 2);
+          const colIndex = C - range.s.c;
+          if (!excelSheet.columns[colIndex]) excelSheet.columns[colIndex] = { width };
+          else excelSheet.columns[colIndex].width = width;
+        }
+
+        // produce buffer and download
+        const buffer = await excelWorkbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Export error', err);
+        alert('Failed to export styled Excel — see console for details.');
       }
-      mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K like C#
-
-      // Ensure sheet ref includes up to M40 (so added cells are visible)
-      ensureRef(ws, 'A1', 'M40');
-
-      // Download
-      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
-      const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (appState.quotationName || 'Quotation') + '.xlsx';
-      document.body.appendChild(a); a.click(); a.remove();
     }
 
     // ---------- Collect Step4 and Download ----------
@@ -582,6 +649,7 @@
       appState.trips.Luxor     = getChecked('#cbLuxorTrips');
       appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
+      // Now call the styled writer (it reads from appState.workbook which your existing code modifies)
       writeExcelAndDownload();
     };
 
