@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Quotation Builder (Review & Editable)</title>
+  <meta charset="utf-8" />
+  <title>Quotation Builder (Full Dynamic, Review & Edit)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; --accent:#06b6d4; }
+    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; --accent:#06b6d4; --yellow:#fff7cc; }
     * { box-sizing: border-box; }
     body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); }
     .container { max-width:1200px; margin:28px auto; padding:20px; background:var(--card); border-radius:14px; box-shadow:0 12px 40px rgba(2,6,23,.08); }
@@ -46,24 +46,26 @@
     th, td { border-bottom:1px solid #f1f5f9; padding:8px 6px; text-align:left; vertical-align:middle; }
     th { background:linear-gradient(90deg,#fbfdff,#f5fbff); color:#0b4bcc; font-weight:700; }
     .numCell { width:120px; text-align:right; }
-    .editable { background:#fffbe6; border:1px dashed #ffe58f; padding:6px 8px; border-radius:6px; min-width:60px; text-align:right; }
+    .editable { background:var(--yellow); border:1px dashed #ffd66b; padding:6px 8px; border-radius:6px; min-width:60px; text-align:right; }
     .muted { color:var(--muted); font-size:13px; }
     .summary { font-size:15px; font-weight:700; color:#0b5fff; text-align:right; }
     .small { font-size:12px; color:var(--muted); }
     .badge { display:inline-block; padding:6px 8px; border-radius:8px; font-weight:700; background:#eef2ff; color:#0b5fff; font-size:13px; }
+    .section-total { display:flex; justify-content:space-between; gap:8px; padding:8px; background:#fbfdff; border-radius:8px; margin-top:8px; border:1px solid #eef6ff; }
   </style>
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
+
 <body>
   <div class="container">
     <header>
       <div>
         <h1>Quotation Builder</h1>
-        <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill steps, then review & edit the generated report (no download).</div>
+        <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill wizard steps, then review & edit the generated report (client-side only).</div>
       </div>
-      <div class="muted small">Client-only, powered by SheetJS</div>
+      <div class="muted small">Client-only, runs in-browser. Uses your uploaded sheet dynamically.</div>
     </header>
 
     <div class="steps" aria-hidden>
@@ -80,7 +82,7 @@
         <div class="card">
           <h3>Upload Excel (.xlsx)</h3>
           <input type="file" id="upload" accept=".xlsx" />
-          <div class="hint">This is your base file. We’ll read the lookup sheets (Sites & Transfers) and use them to compute the numbers.</div>
+          <div class="hint">This is your base file. We’ll read the lookup sheets (Sites & Transfers) and use them to compute numbers. Upload before proceeding.</div>
         </div>
         <div class="card">
           <h3>Quotation Info</h3>
@@ -157,7 +159,7 @@
             <label>Nights
               <select id="ddlNightsCairoGiza"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceCairoGiza"></select>
             </label>
           </div>
@@ -168,7 +170,7 @@
             <label>Nights
               <select id="ddlNightsSharm"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceSharm"></select>
             </label>
           </div>
@@ -182,7 +184,7 @@
             <label>Nights
               <select id="ddlNightsLuxor"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceLuxor"></select>
             </label>
           </div>
@@ -193,7 +195,7 @@
             <label>Nights
               <select id="ddlNightsAswan"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceAswan"></select>
             </label>
           </div>
@@ -207,7 +209,7 @@
             <label>Nights
               <select id="ddlNightsHurghada"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceHurghada"></select>
             </label>
           </div>
@@ -218,7 +220,7 @@
             <label>Nights
               <select id="ddlNightsNileCruise"></select>
             </label>
-            <label>Price/Night ($)
+            <label>Price/Night
               <select id="ddlPriceNileCruise"></select>
             </label>
           </div>
@@ -307,6 +309,9 @@
             <span style="margin-left:10px" id="reviewQuoteTitle" class="muted"></span>
           </div>
           <div>
+            <label class="small muted" style="margin-right:8px">Pax (E3): <input id="inputPax" type="number" min="1" style="width:70px" /></label>
+            <label class="small muted" style="margin-right:8px">Quote date (J2): <input id="inputDate" type="date" /></label>
+            <label class="small muted" style="margin-right:8px">Exchange (M2): <input id="inputEx" type="number" step="0.0001" style="width:90px" /></label>
             <button class="secondary" id="backToSteps">← Back to steps</button>
             <button id="applyEdits" class="ghost">Apply Edits to State</button>
           </div>
@@ -321,9 +326,31 @@
           <div class="review-right" id="reviewRight">
             <h3 style="margin-top:0">Summary</h3>
             <div id="reviewSummary" class="summary">Computing...</div>
+
+            <div class="section-total" id="sectionTotals">
+              <div>Accommodation</div><div id="sumAccommodation">$0</div>
+            </div>
+            <div class="section-total">
+              <div>Sites / Flight</div><div id="sumSites">$0</div>
+            </div>
+            <div class="section-total">
+              <div>Transfers</div><div id="sumTransfers">$0</div>
+            </div>
+            <div class="section-total">
+              <div>Meals</div><div id="sumMeals">$0</div>
+            </div>
+            <div style="height:8px"></div>
+            <div class="section-total" style="background:#fff7f0">
+              <div style="font-weight:800">Grand total (local)</div><div id="grandLocal">$0</div>
+            </div>
+            <div style="height:8px"></div>
+            <div class="section-total" style="background:#eef7ff">
+              <div style="font-weight:800">Grand total (USD)</div><div id="grandUSD">$0</div>
+            </div>
+
             <div style="height:12px"></div>
             <h4 class="small">Editable Controls</h4>
-            <div class="small muted">Change numbers in the yellow fields to adjust results. Click "Apply Edits to State" to save.</div>
+            <div class="small muted">Change numbers in the yellow fields to adjust results. Click "Apply Edits to State" to persist key edits.</div>
           </div>
         </div>
       </div>
@@ -331,653 +358,785 @@
 
   </div>
 
-  <script>
-    // ---------- State (Session-like) ----------
-    const appState = {
-      workbook: null,
-      sheetName: null,
-      quotationName: "",
-      flightTicket: "",
-      sites: [],
-      accommodation: {
-        "Cairo/Giza": { nights: "0", price: "0" },
-        "Sharm el Sheikh": { nights: "0", price: "0" },
-        "Luxor": { nights: "0", price: "0" },
-        "Aswan": { nights: "0", price: "0" },
-        "Hurghada": { nights: "0", price: "0" },
-        "Nile Cruise": { nights: "0", price: "0" },
-      },
-      guideTicket: "",
-      guideAccomodation: "",
-      meals: { "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0" },
-      cairoCounters: { apt:"0", fd:"0", night:"0" },
-      trips: { "CairoGiza": [], "Sharm": [], "Luxor": [], "Aswan": [] },
-      lookups: { sites: {}, transfers: {} },
-      preview: { rows: [], accommodationRows: [], mealRows: [], summaryTotal: 0 }
-    };
+<script>
+/* --------- Full client-side implementation ---------- */
 
-    // ---------- Helpers ----------
-    const $ = sel => document.querySelector(sel);
-    function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
-    function optionRange(sel, from, to, withZeroValue=true) {
-      sel.innerHTML = "";
-      for (let i=from;i<=to;i++){ const opt=document.createElement('option'); opt.value=String(i); opt.text=String(i); sel.appendChild(opt); }
-      if (withZeroValue && from!==0) { const zero=document.createElement('option'); zero.value="0"; zero.text="0"; sel.insertBefore(zero, sel.firstChild); }
+/* ---------- State ---------- */
+const appState = {
+  workbook: null,
+  sheetName: null,
+  quotationName: "",
+  flightTicket: "",
+  sites: [],
+  accommodation: {
+    "Cairo/Giza": { nights: "0", price: "0" },
+    "Sharm el Sheikh": { nights: "0", price: "0" },
+    "Luxor": { nights: "0", price: "0" },
+    "Aswan": { nights: "0", price: "0" },
+    "Hurghada": { nights: "0", price: "0" },
+    "Nile Cruise": { nights: "0", price: "0" },
+  },
+  guideTicket: "",
+  guideAccomodation: "",
+  meals: { "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0" },
+  cairoCounters: { apt:"0", fd:"0", night:"0" },
+  trips: { "CairoGiza": [], "Sharm": [], "Luxor": [], "Aswan": [] },
+  lookups: { sites: {}, transfers: {} }, // parsed
+  preview: { rows: [], accommodationRows: [], mealRows: [], summaryTotal:0 },
+  // additional runtime values
+  people: 2,
+  j2Date: new Date(),
+  exchangeRate: 1.0, // from M2 by default
+  exchangeInvert: false // if true, USD = local * rate
+};
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+function optionRange(sel, from, to, withZeroValue=true){ sel.innerHTML=''; for(let i=from;i<=to;i++){ const o=document.createElement('option'); o.value=String(i); o.text=String(i); sel.appendChild(o);} if(withZeroValue && from!==0){ const z=document.createElement('option'); z.value="0"; z.text="0"; sel.insertBefore(z, sel.firstChild);} }
+function optionList(sel, arr, includeZero=true){ sel.innerHTML=''; if(includeZero){ const z=document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z);} arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); }); }
+function renderChecks(container, items){
+  const el = document.querySelector(container);
+  if(!el) return;
+  el.innerHTML='';
+  items.forEach(txt=>{
+    const id = container.slice(1) + "_" + txt.replace(/\W+/g,'_');
+    const lbl = document.createElement('label');
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.value=txt; cb.id=id;
+    const span = document.createElement('span'); span.textContent = " " + txt;
+    lbl.appendChild(cb); lbl.appendChild(span);
+    el.appendChild(lbl);
+  });
+}
+function getChecked(container){ return Array.from(document.querySelectorAll(container + " input[type=checkbox]:checked")).map(cb=>cb.value); }
+function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const s = String(v).replace(/[, ]+/g,''); const n = Number(s); return Number.isFinite(n)?n:null; }
+function fmt(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
+function escapeHtml(s){ if(s===0) return '0'; if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- Client-side constant lists ---------- */
+const lists = {
+  Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
+  Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
+  CairoGiza: ["Grand Egyptian Museum","Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
+  AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
+  KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
+  Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
+  Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
+  Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
+  Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
+  CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
+  SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
+  LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
+  AswanTrips: ["Aswan Station","Aswan apt","Aswan fd","Nubian Museum","Abu Simbel","Nubian Village","Nubian Village Visit"]
+};
+
+/* ---------- Setup the UI dynamic controls ---------- */
+renderChecks('#cbPyramids', lists.Pyramids);
+renderChecks('#cbSakkara', lists.Sakkara);
+renderChecks('#cbCairoGiza', lists.CairoGiza);
+renderChecks('#cbAlexBehera', lists.AlexBehera);
+renderChecks('#cbKafrEtAl', lists.KafrEtAl);
+renderChecks('#cbLuxor', lists.Luxor);
+renderChecks('#cbAswan', lists.Aswan);
+renderChecks('#cbSharm', lists.Sharm);
+renderChecks('#cbMosques', lists.Mosques);
+
+renderChecks('#cbCairoGizaTrips', lists.CairoGizaTrips);
+renderChecks('#cbSharmTrips', lists.SharmTrips);
+renderChecks('#cbLuxorTrips', lists.LuxorTrips);
+renderChecks('#cbAswanTrips', lists.AswanTrips);
+
+const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
+nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
+
+const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
+const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
+
+function fillPrice(selId, arr){ const el=document.getElementById(selId); if(!el) return; el.innerHTML=""; arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o); }); }
+fillPrice('ddlPriceCairoGiza', price30to150);
+fillPrice('ddlPriceSharm', price30to150);
+fillPrice('ddlPriceLuxor', price30to150);
+fillPrice('ddlPriceAswan', price30to150);
+fillPrice('ddlPriceHurghada', price30to150);
+fillPrice('ddlPriceNileCruise', priceNileCruise);
+
+const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
+const mealsWrap = document.getElementById('mealsSelects');
+mealTiers.forEach(tier=>{
+  const row=document.createElement('div'); row.className='row';
+  const lbl=document.createElement('label'); lbl.textContent=`${tier} Meals`;
+  const sel=document.createElement('select'); sel.id='ddlMeals'+tier;
+  optionRange(sel, 0, 6, false);
+  row.appendChild(lbl); row.appendChild(sel);
+  mealsWrap.appendChild(row);
+});
+
+optionRange(document.getElementById('Cairoapt'), 0, 5, false);
+optionRange(document.getElementById('Cairofd'), 0, 5, false);
+optionRange(document.getElementById('CairoNight'), 0, 5, false);
+
+/* ---------- Excel Upload & parse lookup sheets ---------- */
+document.getElementById('upload').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      appState.workbook = XLSX.read(data, { type: 'array', cellDates:true });
+      // choose first sheet as primary
+      appState.sheetName = appState.workbook.SheetNames[0];
+      parseLookupsFromWorkbook();
+      // read default E3, J2, M2 if present
+      readMainSheetKeyCells();
+      alert('Excel uploaded and parsed successfully.');
+    } catch(err){
+      console.error(err);
+      alert('Failed to read Excel. Ensure it is a valid .xlsx');
     }
-    function optionList(sel, arr, includeZero=true){
-      sel.innerHTML="";
-      if (includeZero) { const z=document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
-      arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); });
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function findSheetByNameLike(sub){
+  if(!appState.workbook) return null;
+  const target = appState.workbook.SheetNames.find(n => n.toLowerCase().includes(sub.toLowerCase()));
+  return target || null;
+}
+
+function parseLookupsFromWorkbook(){
+  appState.lookups.sites = {};
+  appState.lookups.transfers = {};
+
+  const sitesSheetName = findSheetByNameLike('site') || findSheetByNameLike('sites');
+  if(sitesSheetName){
+    const sht = appState.workbook.Sheets[sitesSheetName];
+    const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
+    for(let r=1;r<rows.length;r++){
+      const row = rows[r] || [];
+      const name = row[0]; if(!name) continue;
+      const price = parseNumber(row[1]) || 0;
+      const newPriceRaw = parseNumber(row[2]);
+      const newPrice = (newPriceRaw !== null) ? newPriceRaw : Math.round(price * 1.1 * 100)/100;
+      appState.lookups.sites[String(name).trim()] = { price, newPrice };
     }
-    function renderChecks(container, items){
-      const el=document.querySelector(container); if(!el) return;
-      el.innerHTML="";
-      items.forEach(txt=>{
-        const id = container.slice(1) + "_" + txt.replace(/\W+/g,'_');
-        const lbl=document.createElement('label');
-        const cb = document.createElement('input'); cb.type='checkbox'; cb.value=txt; cb.id=id;
-        const span=document.createElement('span'); span.textContent=" "+txt;
-        lbl.appendChild(cb); lbl.appendChild(span);
-        el.appendChild(lbl);
-      });
-    }
-    function getChecked(container){ return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value); }
-    function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const n = Number(String(v).toString().replace(/[, ]+/g,'')); return Number.isFinite(n)?n:null; }
-    function fmt(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
+  } else {
+    console.warn('Sites sheet not found.');
+  }
 
-    // ---------- Static client-side lists (same as your ASPX) ----------
-    const lists = {
-      Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
-      Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
-      CairoGiza: ["Grand Egyptian Museum","Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
-      AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
-      KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
-      Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
-      Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
-      Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
-      Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
-      CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
-      SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
-      LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
-      AswanTrips: ["Aswan Station","Aswan apt","Aswan fd","Nubian Museum","Abu Simbel","Nubian Village","Nubian Village Visit"]
-    };
-
-    // ---------- Render dynamic controls (same as original) ----------
-    renderChecks('#cbPyramids', lists.Pyramids);
-    renderChecks('#cbSakkara', lists.Sakkara);
-    renderChecks('#cbCairoGiza', lists.CairoGiza);
-    renderChecks('#cbAlexBehera', lists.AlexBehera);
-    renderChecks('#cbKafrEtAl', lists.KafrEtAl);
-    renderChecks('#cbLuxor', lists.Luxor);
-    renderChecks('#cbAswan', lists.Aswan);
-    renderChecks('#cbSharm', lists.Sharm);
-    renderChecks('#cbMosques', lists.Mosques);
-
-    renderChecks('#cbCairoGizaTrips', lists.CairoGizaTrips);
-    renderChecks('#cbSharmTrips', lists.SharmTrips);
-    renderChecks('#cbLuxorTrips', lists.LuxorTrips);
-    renderChecks('#cbAswanTrips', lists.AswanTrips);
-
-    // Nights dropdowns: 0..10
-    const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
-    nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
-    // Price dropdowns (copying your ASPX options)
-    const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
-    const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
-
-    function fillPrice(selId, arr){ const el=document.getElementById(selId); if(!el) return; el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
-    fillPrice('ddlPriceCairoGiza', price30to150);
-    fillPrice('ddlPriceSharm', price30to150);
-    fillPrice('ddlPriceLuxor', price30to150);
-    fillPrice('ddlPriceAswan', price30to150);
-    fillPrice('ddlPriceHurghada', price30to150);
-    fillPrice('ddlPriceNileCruise', priceNileCruise);
-
-    // Meals dropdowns
-    const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
-    const mealsWrap = document.getElementById('mealsSelects');
-    mealTiers.forEach(tier=>{
-      const row=document.createElement('div'); row.className='row';
-      const lbl=document.createElement('label'); lbl.textContent=`${tier} Meals`;
-      const sel=document.createElement('select'); sel.id='ddlMeals'+tier;
-      optionRange(sel, 0, 6, false);
-      row.appendChild(lbl); row.appendChild(sel);
-      mealsWrap.appendChild(row);
-    });
-
-    // Cairo counters 0..5
-    optionRange(document.getElementById('Cairoapt'), 0, 5, false);
-    optionRange(document.getElementById('Cairofd'), 0, 5, false);
-    optionRange(document.getElementById('CairoNight'), 0, 5, false);
-
-    // ---------- Upload Excel (SheetJS) ----------
-    document.getElementById('upload').addEventListener('change', e=>{
-      const file=e.target.files[0]; if(!file) return;
-      const reader=new FileReader();
-      reader.onload = evt=>{
-        const data = new Uint8Array(evt.target.result);
-        try {
-          appState.workbook = XLSX.read(data, { type:'array' });
-          appState.sheetName = appState.workbook.SheetNames[0];
-          parseLookupsFromWorkbook();
-          alert('Excel uploaded and lookups parsed successfully.');
-        } catch (err) {
-          console.error(err);
-          alert('Failed to read Excel. Ensure it is a valid .xlsx');
+  const transfersSheetName = findSheetByNameLike('transfer') || findSheetByNameLike('transfers');
+  if(transfersSheetName){
+    const sht = appState.workbook.Sheets[transfersSheetName];
+    const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
+    // header may have multipliers. We parse row-wise.
+    for(let r=1;r<rows.length;r++){
+      const row = rows[r] || [];
+      const nameBefore = row[0];
+      const transferName = nameBefore || row[4];
+      if(!transferName) continue;
+      const b = parseNumber(row[1]) || 0;
+      const c = parseNumber(row[2]) || 0;
+      const d = parseNumber(row[3]) || 0;
+      const beforeArr = [b,c,d];
+      // after columns attempt to parse numeric or parse formula multiplier
+      let after = [null,null,null];
+      for(let j=5;j<=7;j++){
+        const cellVal = row[j];
+        if(typeof cellVal === 'number') after[j-5] = cellVal;
+        else if(typeof cellVal === 'string' && cellVal.startsWith('=')){
+          const m = parseMultiplierFromFormula(cellVal);
+          if(m !== null) after[j-5] = Math.round(beforeArr[j-5] * m * 100)/100;
+        } else if(typeof cellVal === 'string'){
+          // try parse numeric string
+          const p = parseNumber(cellVal);
+          if(p !== null) after[j-5] = p;
         }
-      };
-      reader.readAsArrayBuffer(file);
-    });
-
-    // ---------- Parse lookup tables from workbook sheet names (Sites & Transfers) ----------
-    function findSheetByNameLike(sub) {
-      if(!appState.workbook) return null;
-      const target = appState.workbook.SheetNames.find(n => n.toLowerCase().includes(sub.toLowerCase()));
-      return target || null;
-    }
-
-    function parseLookupsFromWorkbook(){
-      const sitesSheetName = findSheetByNameLike('site') || findSheetByNameLike('sites');
-      appState.lookups.sites = {};
-      if(sitesSheetName){
-        const sht = appState.workbook.Sheets[sitesSheetName];
-        const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
-        for(let r=1;r<rows.length;r++){
-          const row = rows[r];
-          const name = row[0]; if(!name) continue;
-          const price = parseNumber(row[1]) || 0;
-          const newPriceRaw = parseNumber(row[2]);
-          const newPrice = newPriceRaw || Math.round(price * 1.1 * 100)/100;
-          appState.lookups.sites[String(name).trim()] = { price, newPrice };
+      }
+      // fallback header multiplier if needed
+      for(let k=0;k<3;k++){
+        if(after[k] === null){
+          const head = rows[0] || [];
+          const headerMultiplierCell = head[head.length-1];
+          const headerMultiplier = parseNumber(headerMultiplierCell) || 1.1;
+          after[k] = Math.round(beforeArr[k] * headerMultiplier * 100)/100;
         }
+      }
+      appState.lookups.transfers[String(transferName).trim()] = { before: beforeArr, after: after };
+    }
+  } else {
+    console.warn('Transfers sheet not found.');
+  }
+
+  console.log('Lookups parsed:', appState.lookups);
+}
+
+function parseMultiplierFromFormula(formula){
+  try {
+    const matchPct = formula.match(/\*(\d+)%/);
+    if(matchPct) return Number(matchPct[1]) / 100;
+    const matchDec = formula.match(/\*([\d\.]+)/);
+    if(matchDec) return Number(matchDec[1]);
+  } catch(e){}
+  return null;
+}
+
+/* ---------- read main-sheet key cells E3, J2, M2 ---------- */
+function readMainSheetKeyCells(){
+  if(!appState.workbook || !appState.sheetName) return;
+  const sht = appState.workbook.Sheets[appState.sheetName];
+  if(!sht) return;
+  function readCell(a1){
+    if(!sht[a1]) return null;
+    const cell = sht[a1];
+    if(cell.v !== undefined) return cell.v;
+    return null;
+  }
+  const e3 = readCell('E3');
+  const j2 = readCell('J2');
+  const m2 = readCell('M2');
+  // People:
+  const pp = parseNumber(e3);
+  if(pp !== null) appState.people = pp;
+  // j2 date:
+  let j2Date = null;
+  if(j2 instanceof Date) j2Date = j2;
+  else if(typeof j2 === 'number'){ // Excel serial
+    const parsed = XLSX.SSF.parse_date_code(j2);
+    if(parsed) j2Date = new Date(Date.UTC(parsed.y, parsed.m-1, parsed.d));
+  } else if(typeof j2 === 'string'){
+    const d = new Date(j2);
+    if(!isNaN(d)) j2Date = d;
+  }
+  if(j2Date) appState.j2Date = j2Date;
+  // exchange rate:
+  const ex = parseNumber(m2);
+  if(ex !== null && ex > 0) appState.exchangeRate = ex;
+
+  // populate UI controls for review page if present
+  $('#inputPax').value = appState.people;
+  $('#inputDate').value = (new Date(appState.j2Date)).toISOString().slice(0,10);
+  $('#inputEx').value = appState.exchangeRate;
+}
+
+/* ---------- Navigation ---------- */
+$('#toStep2').onclick = () => {
+  if(!appState.workbook){ alert('Please upload Excel first.'); return; }
+  appState.quotationName = $('#quotationName').value.trim();
+  if(!appState.quotationName){ alert('Please provide a quotation name.'); return; }
+  appState.flightTicket = $('#flightTicket').value.trim();
+  appState.sites = []
+    .concat(getChecked('#cbPyramids'))
+    .concat(getChecked('#cbSakkara'))
+    .concat(getChecked('#cbCairoGiza'))
+    .concat(getChecked('#cbAlexBehera'))
+    .concat(getChecked('#cbKafrEtAl'))
+    .concat(getChecked('#cbLuxor'))
+    .concat(getChecked('#cbAswan'))
+    .concat(getChecked('#cbSharm'));
+  showStep(2);
+};
+$('#back1').onclick = ()=> showStep(1);
+
+$('#toStep3').onclick = ()=>{
+  appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
+  appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
+  appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
+  appState.accommodation["Sharm el Sheikh"].price  = $('#ddlPriceSharm').value;
+  appState.accommodation["Luxor"].nights = $('#ddlNightsLuxor').value;
+  appState.accommodation["Luxor"].price  = $('#ddlPriceLuxor').value;
+  appState.accommodation["Aswan"].nights = $('#ddlNightsAswan').value;
+  appState.accommodation["Aswan"].price  = $('#ddlPriceAswan').value;
+  appState.accommodation["Hurghada"].nights = $('#ddlNightsHurghada').value;
+  appState.accommodation["Hurghada"].price  = $('#ddlPriceHurghada').value;
+  appState.accommodation["Nile Cruise"].nights = $('#ddlNightsNileCruise').value;
+  appState.accommodation["Nile Cruise"].price  = $('#ddlPriceNileCruise').value;
+  showStep(3);
+};
+$('#back2').onclick = ()=> showStep(2);
+
+$('#toStep4').onclick = ()=>{
+  appState.guideTicket = $('#TextBoxGuideTicket').value.trim();
+  appState.guideAccomodation = $('#TextBoxGuideAccomodation').value.trim();
+  mealTiers.forEach(tier=> appState.meals[tier] = document.getElementById('ddlMeals'+tier).value );
+  showStep(4);
+};
+$('#back3').onclick = ()=> showStep(3);
+$('#resetBtn1').onclick = ()=> { if(confirm('Clear inputs?')) location.reload(); };
+
+/* ---------- Keep original Excel writer (left intact for parity) ---------- */
+function n(v){ const x=parseInt(v,10); return Number.isFinite(x)?x:null; }
+function set(ws, addr, value){ ws[addr] = (typeof value === 'number') ? { t:'n', v:value } : { t:'s', v:String(value) }; }
+function ensureRef(ws, minA1, maxA1){
+  const dec = r=>XLSX.utils.decode_cell(r);
+  const enc = o=>XLSX.utils.encode_cell(o);
+  const min = dec(minA1), max = dec(maxA1);
+  const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
+  const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
+  const e = { c: Math.max(cur.e.c, max.c), r: Math.max(cur.e.r, max.r) };
+  ws['!ref'] = XLSX.utils.encode_range({s,e});
+}
+function writeExcelAndDownload(){
+  if(!appState.workbook){ alert('No workbook loaded.'); return; }
+  const sheetName = appState.workbook.SheetNames[0];
+  const ws = appState.workbook.Sheets[sheetName];
+
+  // Flight ticket + F/G
+  let rowF = 10;
+  const ft = n(appState.flightTicket);
+  if(ft !== null){
+    set(ws, `F${rowF}`, "Flight Ticket");
+    set(ws, `G${rowF}`, ft);
+    rowF++;
+  }
+  for(const item of appState.sites){
+    if(rowF > 40) break;
+    set(ws, `F${rowF}`, item);
+    rowF++;
+  }
+
+  // Guide extras L/M
+  const guideTicket = n(appState.guideTicket);
+  if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+  const guideAcc = n(appState.guideAccomodation);
+  if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+
+  // Trips column H rows 10..40
+  let rowH = 10;
+  const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+  const cntApt = n(appState.cairoCounters.apt) || 0;
+  for(let i=0;i<cntApt;i++) addH("Cairo apt");
+  const cntFd = n(appState.cairoCounters.fd) || 0;
+  for(let i=0;i<cntFd;i++) addH("Cairo fd");
+  const cntNight = n(appState.cairoCounters.night) || 0;
+  for(let i=0;i<cntNight;i++) addH("Cairo night");
+  [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+
+  // Accommodation rows B/C
+  function fillAccommodation(place, nights, price, rowIndex){
+    const ni = n(nights) || 0;
+    const pi = n(price) || 0;
+    if(ni>0 && pi>0){
+      set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
+      set(ws, `C${rowIndex}`, ni * pi);
+    } else {
+      set(ws, `B${rowIndex}`, "");
+      set(ws, `C${rowIndex}`, "");
+    }
+  }
+  fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
+  fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
+  fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
+  fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
+  fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
+  fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
+
+  // Meals J/K
+  let currentRowJ = 10, currentRowK = 10;
+  function writeMeals(mealCategory, mealsQuantityStr){
+    const q = n(mealsQuantityStr);
+    if(q && q>0){
+      set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
+      set(ws, `K${currentRowK}`, q * n(mealCategory));
+      currentRowJ++; currentRowK++;
+    }
+  }
+  mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
+  for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused
+
+  ensureRef(ws, 'A1', 'M40');
+
+  const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+  const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- Compute preview model (mimic Excel formulas exactly) ---------- */
+function computePreviewModel(){
+  appState.preview.rows = [];
+  appState.preview.accommodationRows = [];
+  appState.preview.mealRows = [];
+
+  // read local j2 and pax from appState (which may have been set from sheet or UI)
+  const people = appState.people;
+  const j2Date = new Date(appState.j2Date || new Date());
+  const thresholdDate = new Date(2025,10,1); // Nov 1 2025
+
+  // Build F list (flight + selected sites)
+  const fList = [];
+  const ft = parseNumber(appState.flightTicket);
+  if(ft !== null) fList.push({ label: 'Flight Ticket', value: ft });
+  for(const s of appState.sites) fList.push({ label: s, value: null });
+
+  // Build H list (transfers) based on counters + checked trips
+  const hList = [];
+  const aptCnt = parseNumber(appState.cairoCounters.apt) || 0;
+  for(let i=0;i<aptCnt;i++) hList.push('Cairo apt');
+  const fdCnt = parseNumber(appState.cairoCounters.fd) || 0;
+  for(let i=0;i<fdCnt;i++) hList.push('Cairo fd');
+  const nightCnt = parseNumber(appState.cairoCounters.night) || 0;
+  for(let i=0;i<nightCnt;i++) hList.push('Cairo night');
+  [...(appState.trips.CairoGiza||[]), ...(appState.trips.Sharm||[]), ...(appState.trips.Luxor||[]), ...(appState.trips.Aswan||[])].forEach(t=>hList.push(t));
+
+  // Accommodation rows 10..15
+  const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
+  for(let i=0;i<accomOrder.length;i++){
+    const place = accomOrder[i];
+    const rowIndex = 10 + i;
+    const nights = parseNumber(appState.accommodation[place].nights) || 0;
+    const price = parseNumber(appState.accommodation[place].price) || 0;
+    const total = (nights>0 && price>0) ? (nights * price) : "";
+    appState.preview.accommodationRows.push({ rowIndex, place, nights, price, total });
+  }
+
+  // Meals (J/K)
+  let mealRowIndex = 10;
+  for(const tier of mealTiers){
+    const qty = parseNumber(appState.meals[tier]) || 0;
+    if(qty>0){
+      const total = qty * Number(tier);
+      appState.preview.mealRows.push({ rowIndex: mealRowIndex, tier: Number(tier), qty, total });
+      mealRowIndex++;
+    }
+  }
+
+  // Build default rows 10..40 with B..M placeholders
+  const rows = [];
+  for(let r=10;r<=40;r++){
+    rows.push({ row:r, B:"", C:"", D:"", F:"", G:"", H:"", I:"", J:"", K:"" });
+  }
+
+  // Map accommodation into rows
+  for(const ac of appState.preview.accommodationRows){
+    const idx = ac.rowIndex - 10;
+    rows[idx].B = (ac.nights>0 ? `${ac.nights} nights ${ac.place}` : "");
+    rows[idx].C = (ac.total === "" ? "" : ac.total);
+    rows[idx].D = (ac.total !== "" ? Math.round(ac.total * 0.7 * 100)/100 : "");
+  }
+
+  // Map meals into rows
+  for(const m of appState.preview.mealRows){
+    const idx = m.rowIndex - 10;
+    rows[idx].J = `${m.qty} ${m.tier} meals`;
+    rows[idx].K = m.total;
+  }
+
+  // Map F/G (flight + sites) into rows in order
+  for(let i=0;i<fList.length;i++){
+    const rIndex = 10 + i;
+    if(rIndex > 40) break;
+    const rowObj = rows[rIndex - 10];
+    rowObj.F = fList[i].label;
+    if(fList[i].label === 'Flight Ticket'){
+      rowObj.G = (fList[i].value !== null) ? Number(fList[i].value) : "";
+    } else {
+      const sname = fList[i].label;
+      const siteLookup = appState.lookups.sites[sname];
+      if(siteLookup){
+        const useNew = (j2Date >= thresholdDate);
+        rowObj.G = useNew ? siteLookup.newPrice : siteLookup.price;
       } else {
-        console.warn('Sites sheet not found; site lookups will be empty.');
+        rowObj.G = "";
       }
-
-      const transfersSheetName = findSheetByNameLike('transfer') || findSheetByNameLike('transfers');
-      appState.lookups.transfers = {};
-      if(transfersSheetName){
-        const sht = appState.workbook.Sheets[transfersSheetName];
-        const rows = XLSX.utils.sheet_to_json(sht, {header:1, raw:true});
-        for(let r=1;r<rows.length;r++){
-          const row = rows[r];
-          const nameBefore = row[0];
-          const transferName = (nameBefore || row[4]);
-          if(!transferName) continue;
-          const b = parseNumber(row[1]);
-          const c = parseNumber(row[2]);
-          const d = parseNumber(row[3]);
-          const beforeArr = [b||0, c||0, d||0];
-          let after = [null,null,null];
-          for(let j=5;j<=7;j++){
-            const cellVal = row[j];
-            if(typeof cellVal === 'number') { after[j-5] = cellVal; }
-            else if(typeof cellVal === 'string' && cellVal.startsWith('=')){
-              const m = parseMultiplierFromFormula(cellVal);
-              if(m) after[j-5] = Math.round(beforeArr[j-5]*m*100)/100;
-            }
-          }
-          for(let k=0;k<3;k++){
-            if(after[k] === null){
-              const head = rows[0];
-              const headerMultiplierCell = head && head[head.length-1];
-              const headerMultiplier = parseNumber(headerMultiplierCell) || 1.1;
-              after[k] = Math.round(beforeArr[k] * headerMultiplier * 100)/100;
-            }
-          }
-          appState.lookups.transfers[String(transferName).trim()] = { before: beforeArr, after: after };
-        }
-      } else {
-        console.warn('Transfers sheet not found; transfers lookup empty.');
-      }
-      console.log('Parsed lookups:', appState.lookups);
     }
+  }
 
-    function parseMultiplierFromFormula(formula){
-      try {
-        const matchPct = formula.match(/\*(\d+)%/);
-        if(matchPct) return (Number(matchPct[1]) / 100);
-        const matchDec = formula.match(/\*([\d\.]+)/);
-        if(matchDec) return Number(matchDec[1]);
-      } catch(e){}
-      return null;
+  // Map H/I (transfers) into rows
+  for(let i=0;i<hList.length;i++){
+    const rIndex = 10 + i;
+    if(rIndex > 40) break;
+    const rowObj = rows[rIndex - 10];
+    rowObj.H = hList[i];
+    if(!hList[i]) { rowObj.I = ""; continue; }
+    const useAfter = (j2Date >= thresholdDate);
+    const tr = appState.lookups.transfers[hList[i]];
+    if(tr){
+      const arr = useAfter ? tr.after : tr.before;
+      const idx = (people <= 7) ? 0 : (people <= 15 ? 1 : 2);
+      rowObj.I = arr[idx] || "";
+    } else {
+      rowObj.I = "";
     }
+  }
 
-    // ---------- Navigation handlers ----------
-    document.getElementById('toStep2').onclick = ()=> {
-      if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
-      appState.quotationName = $('#quotationName').value.trim();
-      if(!appState.quotationName){ alert('Please provide a Quotation Name.'); return; }
-      appState.flightTicket = $('#flightTicket').value.trim();
-      appState.sites = []
-        .concat(getChecked('#cbPyramids'))
-        .concat(getChecked('#cbSakkara'))
-        .concat(getChecked('#cbCairoGiza'))
-        .concat(getChecked('#cbAlexBehera'))
-        .concat(getChecked('#cbKafrEtAl'))
-        .concat(getChecked('#cbLuxor'))
-        .concat(getChecked('#cbAswan'))
-        .concat(getChecked('#cbSharm'));
-      showStep(2);
-    };
-    document.getElementById('back1').onclick = ()=> showStep(1);
-    document.getElementById('toStep3').onclick = ()=> {
-      appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
-      appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
-      appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
-      appState.accommodation["Sharm el Sheikh"].price  = $('#ddlPriceSharm').value;
-      appState.accommodation["Luxor"].nights = $('#ddlNightsLuxor').value;
-      appState.accommodation["Luxor"].price  = $('#ddlPriceLuxor').value;
-      appState.accommodation["Aswan"].nights = $('#ddlNightsAswan').value;
-      appState.accommodation["Aswan"].price  = $('#ddlPriceAswan').value;
-      appState.accommodation["Hurghada"].nights = $('#ddlNightsHurghada').value;
-      appState.accommodation["Hurghada"].price  = $('#ddlPriceHurghada').value;
-      appState.accommodation["Nile Cruise"].nights = $('#ddlNightsNileCruise').value;
-      appState.accommodation["Nile Cruise"].price  = $('#ddlPriceNileCruise').value;
-      showStep(3);
-    };
-    document.getElementById('back2').onclick = ()=> showStep(2);
-    document.getElementById('toStep4').onclick = ()=> {
-      appState.guideTicket = $('#TextBoxGuideTicket').value.trim();
-      appState.guideAccomodation = $('#TextBoxGuideAccomodation').value.trim();
-      mealTiers.forEach(tier=> appState.meals[tier] = document.getElementById('ddlMeals'+tier).value );
-      showStep(4);
-    };
-    document.getElementById('back3').onclick = ()=> showStep(3);
-    document.getElementById('resetBtn1').onclick = ()=>{ if(confirm('Clear all current inputs?')) location.reload(); };
+  // Ensure D is 70% of C wherever C numeric
+  for(const r of rows){
+    const cVal = parseNumber(r.C);
+    if(cVal !== null) r.D = Math.round(cVal * 0.7 * 100)/100;
+  }
 
-    // ---------- Keep original Excel-writing function (unchanged) ----------
-    function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
-    function set(ws, addr, value){
-      ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
+  // Save preview
+  appState.preview.rows = rows;
+
+  // compute totals
+  let totalAccommodation = 0, totalSites = 0, totalTransfers = 0, totalMeals = 0;
+  for(const r of rows){
+    totalAccommodation += parseNumber(r.C) || 0;
+    totalSites += parseNumber(r.G) || 0;
+    totalTransfers += parseNumber(r.I) || 0;
+    totalMeals += parseNumber(r.K) || 0;
+  }
+  const grandLocal = Math.round((totalAccommodation + totalSites + totalTransfers + totalMeals) * 100)/100;
+  appState.preview.summaryTotal = grandLocal;
+  appState.preview.totals = {
+    accommodation: Math.round(totalAccommodation*100)/100,
+    sites: Math.round(totalSites*100)/100,
+    transfers: Math.round(totalTransfers*100)/100,
+    meals: Math.round(totalMeals*100)/100,
+    grandLocal
+  };
+}
+
+/* ---------- Render the Review page editable ---------- */
+function renderReviewPage(){
+  $('#reviewQuoteTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
+  // ensure input controls reflect state
+  $('#inputPax').value = appState.people;
+  $('#inputDate').value = (new Date(appState.j2Date)).toISOString().slice(0,10);
+  $('#inputEx').value = appState.exchangeRate;
+
+  computePreviewModel();
+
+  const rows = appState.preview.rows;
+  const detailDiv = $('#detailTables');
+  detailDiv.innerHTML = '';
+
+  // Accommodation table rows 10..15
+  const accom = appState.preview.accommodationRows;
+  const accomTbl = document.createElement('div');
+  accomTbl.innerHTML = `<h4 class="small">Accommodation (B / C / D)</h4>`;
+  const t1 = document.createElement('table');
+  t1.innerHTML = `<thead><tr><th>Row</th><th>Place</th><th class="numCell">Total (local)</th><th class="numCell">Calc D = 70% (local)</th></tr></thead>`;
+  const b1 = document.createElement('tbody');
+  accom.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${a.rowIndex}</td>
+      <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${a.price}</div></td>
+      <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.total!==""?a.total:""}" /></td>
+      <td class="numCell">${fmt(a.total!==""?Math.round(a.total*0.7*100)/100:"")}</td>`;
+    b1.appendChild(tr);
+  });
+  t1.appendChild(b1); accomTbl.appendChild(t1);
+  detailDiv.appendChild(accomTbl);
+
+  // Sites/Flight table F/G
+  const fTblDiv = document.createElement('div'); fTblDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G)</h4>`;
+  const t2 = document.createElement('table');
+  t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (local) (G)</th></tr></thead>`;
+  const b2 = document.createElement('tbody');
+  rows.forEach(r=>{
+    if(r.F && r.F !== ""){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.row}</td>
+        <td>${escapeHtml(r.F)}</td>
+        <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${r.G!==null && r.G!==''?r.G:""}" /></td>`;
+      b2.appendChild(tr);
     }
-    function ensureRef(ws, minA1, maxA1){
-      const dec = r=>XLSX.utils.decode_cell(r);
-      const enc = o=>XLSX.utils.encode_cell(o);
-      const min = dec(minA1), max = dec(maxA1);
-      const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
-      const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
-      const e = { c: Math.max(cur.e.c, max.c), r: Math.max(cur.e.r, max.r) };
-      ws['!ref'] = XLSX.utils.encode_range({s,e});
+  });
+  t2.appendChild(b2); fTblDiv.appendChild(t2); detailDiv.appendChild(fTblDiv);
+
+  // Transfers table H/I
+  const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I)</h4>`;
+  const t3 = document.createElement('table');
+  t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price (local) (I)</th></tr></thead>`;
+  const b3 = document.createElement('tbody');
+  rows.forEach(r=>{
+    if(r.H && r.H !== ""){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.row}</td>
+        <td>${escapeHtml(r.H)}</td>
+        <td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${r.I!==null && r.I!==''?r.I:""}" /></td>`;
+      b3.appendChild(tr);
     }
+  });
+  t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
 
-    function writeExcelAndDownload(){
-      if(!appState.workbook){ alert('No workbook loaded.'); return; }
-      const sheetName = appState.workbook.SheetNames[0];
-      const ws = appState.workbook.Sheets[sheetName];
-
-      let rowF = 10;
-      const ft = n(appState.flightTicket);
-      if(ft !== null){
-        set(ws, `F${rowF}`, "Flight Ticket");
-        set(ws, `G${rowF}`, ft);
-        rowF++;
-      }
-      for(const item of appState.sites){
-        if(rowF > 40) break;
-        set(ws, `F${rowF}`, item);
-        rowF++;
-      }
-
-      const guideTicket = n(appState.guideTicket);
-      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
-      const guideAcc = n(appState.guideAccomodation);
-      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
-
-      let rowH = 10;
-      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
-      const cntApt = n(appState.cairoCounters.apt) || 0;
-      for(let i=0;i<cntApt;i++) addH("Cairo apt");
-      const cntFd = n(appState.cairoCounters.fd) || 0;
-      for(let i=0;i<cntFd;i++) addH("Cairo fd");
-      const cntNight = n(appState.cairoCounters.night) || 0;
-      for(let i=0;i<cntNight;i++) addH("Cairo night");
-      [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
-
-      function fillAccommodation(place, nights, price, rowIndex){
-        const ni = n(nights) || 0;
-        const pi = n(price) || 0;
-        if(ni>0 && pi>0){
-          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
-          set(ws, `C${rowIndex}`, ni * pi);
-        } else {
-          set(ws, `B${rowIndex}`, "");
-          set(ws, `C${rowIndex}`, "");
-        }
-      }
-      fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
-      fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
-      fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
-      fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
-      fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
-      fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
-
-      let currentRowJ = 10, currentRowK = 10;
-      function writeMeals(mealCategory, mealsQuantityStr){
-        const q = n(mealsQuantityStr);
-        if(q && q>0){
-          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
-          set(ws, `K${currentRowK}`, q * n(mealCategory));
-          currentRowJ++; currentRowK++;
-        }
-      }
-      mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "");
-
-      ensureRef(ws, 'A1', 'M40');
-
-      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
-      const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (appState.quotationName || 'Quotation') + '.xlsx';
-      document.body.appendChild(a); a.click(); a.remove();
+  // Meals table J/K
+  const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K)</h4>`;
+  const t4 = document.createElement('table');
+  t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (local) (K)</th></tr></thead>`;
+  const b4 = document.createElement('tbody');
+  rows.forEach(r=>{
+    if(r.J && r.J !== ""){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${r.K!==null && r.K!==''?r.K:""}" /></td>`;
+      b4.appendChild(tr);
     }
+  });
+  t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
 
-    // ---------- Compute preview model (mimic your Excel formulas) ----------
-    function computePreviewModel(){
-      appState.preview.rows = [];
-      appState.preview.accommodationRows = [];
-      appState.preview.mealRows = [];
+  // Display section totals
+  $('#sumAccommodation').textContent = `$ ${fmt(appState.preview.totals.accommodation)}`;
+  $('#sumSites').textContent = `$ ${fmt(appState.preview.totals.sites)}`;
+  $('#sumTransfers').textContent = `$ ${fmt(appState.preview.totals.transfers)}`;
+  $('#sumMeals').textContent = `$ ${fmt(appState.preview.totals.meals)}`;
+  $('#grandLocal').textContent = `$ ${fmt(appState.preview.totals.grandLocal)}`;
 
-      let sheetRaw = null;
-      if(appState.workbook && appState.sheetName){
-        sheetRaw = appState.workbook.Sheets[appState.sheetName];
-      }
+  // convert to USD using exchange rate
+  const ex = appState.exchangeRate;
+  const usd = (ex && ex>0) ? (appState.preview.totals.grandLocal / ex) : 0;
+  $('#grandUSD').textContent = `$ ${fmt(Math.round(usd*100)/100)}`;
 
-      function readCellA1(a1){
-        if(!sheetRaw) return null;
-        const cell = sheetRaw[a1];
-        if(!cell) return null;
-        if(cell.v !== undefined) return cell.v;
-        return null;
-      }
+  // update main summary
+  $('#reviewSummary').textContent = `Estimated total (local): $ ${fmt(appState.preview.totals.grandLocal)}`;
 
-      const workbookPeople = readCellA1('E3');
-      const people = parseNumber(workbookPeople) || 2;
-      const workbookDate = readCellA1('J2');
-      let j2Date = null;
-      if(workbookDate instanceof Date) j2Date = workbookDate;
-      else if(typeof workbookDate === 'number') { const dd = XLSX.SSF.parse_date_code(workbookDate); if(dd) j2Date = new Date(Date.UTC(dd.y, dd.m-1, dd.d)); }
-      else if(typeof workbookDate === 'string') { const d = new Date(workbookDate); if(!isNaN(d)) j2Date = d; }
-      if(!j2Date) j2Date = new Date();
-
-      const thresholdDate = new Date(2025,10,1);
-
-      const fList = [];
-      const ft = parseNumber(appState.flightTicket);
-      if(ft !== null){ fList.push({ label: 'Flight Ticket', value: ft }); }
-      for(const s of appState.sites) { fList.push({ label: s, value: null }); }
-
-      const hList = [];
-      const aptCnt = parseNumber(appState.cairoCounters.apt) || 0;
-      for(let i=0;i<aptCnt;i++) hList.push('Cairo apt');
-      const fdCnt = parseNumber(appState.cairoCounters.fd) || 0;
-      for(let i=0;i<fdCnt;i++) hList.push('Cairo fd');
-      const nightCnt = parseNumber(appState.cairoCounters.night) || 0;
-      for(let i=0;i<nightCnt;i++) hList.push('Cairo night');
-      [...(appState.trips.CairoGiza||[]), ...(appState.trips.Sharm||[]), ...(appState.trips.Luxor||[]), ...(appState.trips.Aswan||[])].forEach(t=>hList.push(t));
-
-      const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
-      for(let i=0;i<accomOrder.length;i++){
-        const place = accomOrder[i];
-        const rowIndex = 10 + i;
-        const nights = parseNumber(appState.accommodation[place].nights) || 0;
-        const price = parseNumber(appState.accommodation[place].price) || 0;
-        const total = (nights>0 && price>0) ? (nights * price) : "";
-        appState.preview.accommodationRows.push({ rowIndex, place, nights, price, total });
-      }
-
-      let mealRowIndex = 10;
-      for(const tier of mealTiers){
-        const qty = parseNumber(appState.meals[tier]) || 0;
-        if(qty>0){
-          const total = qty * Number(tier);
-          appState.preview.mealRows.push({ rowIndex: mealRowIndex, tier: Number(tier), qty, total });
-          mealRowIndex++;
-        }
-      }
-
-      const rows = [];
-      for(let r=10; r<=40; r++){
-        rows.push({ row: r, B: null, C: null, D: null, F: null, G: null, H: null, I: null, J: null, K: null });
-      }
-
-      for(const ac of appState.preview.accommodationRows){
-        const idx = ac.rowIndex - 10;
-        rows[idx].B = `${ac.nights>0 ? ac.nights : ''}${ac.nights>0 ? ' nights ' : ''}${ac.place}`;
-        rows[idx].C = ac.total === "" ? "" : ac.total;
-        rows[idx].D = (ac.total !== "" && ac.total !== null) ? Math.round(ac.total * 0.7 * 100)/100 : "";
-      }
-
-      for(const m of appState.preview.mealRows){
-        const idx = m.rowIndex - 10;
-        rows[idx].J = `${m.qty} ${m.tier} meals`;
-        rows[idx].K = m.total;
-      }
-
-      for(let i=0;i<fList.length;i++){
-        const rowIndex = 10 + i;
-        if(rowIndex>40) break;
-        rows[rowIndex - 10].F = fList[i].label;
-        if(fList[i].label === 'Flight Ticket'){
-          rows[rowIndex - 10].G = (fList[i].value !== null) ? Number(fList[i].value) : "";
-        } else {
-          const sname = fList[i].label;
-          const siteLookup = appState.lookups.sites[sname];
-          if(siteLookup){
-            const useNew = (j2Date >= thresholdDate);
-            rows[rowIndex - 10].G = useNew ? siteLookup.newPrice : siteLookup.price;
-          } else {
-            rows[rowIndex - 10].G = "";
+  // wire editable inputs
+  const editInputs = Array.from(detailDiv.querySelectorAll('input.editable'));
+  editInputs.forEach(inp=>{
+    const path = inp.dataset.path;
+    inp.addEventListener('input', (ev)=>{
+      const valRaw = inp.value;
+      const numeric = parseNumber(valRaw);
+      const rowNum = Number(inp.dataset.row);
+      if(path.startsWith('F:')){ // site/flight value
+        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+        if(rowObj) rowObj.G = (numeric !== null ? numeric : (valRaw===""? "": valRaw));
+      } else if(path.startsWith('H:')){ // transfer value
+        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+        if(rowObj) rowObj.I = (numeric !== null ? numeric : (valRaw===""? "": valRaw));
+      } else if(path.startsWith('J:')){ // meal total
+        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+        if(rowObj) rowObj.K = (numeric !== null ? numeric : (valRaw===""? "": valRaw));
+      } else if(path.startsWith('accom:')){
+        // pattern: accom:PLACE:total
+        const parts = path.split(':');
+        const place = parts[1];
+        const acRow = appState.preview.accommodationRows.find(x=>x.rowIndex===rowNum);
+        if(acRow){
+          const newTotal = numeric;
+          acRow.total = (newTotal === null ? "" : newTotal);
+          // reflect into preview rows: C and D
+          const rObj = appState.preview.rows.find(x=>x.row===rowNum);
+          if(rObj){
+            rObj.C = (newTotal === null ? "" : newTotal);
+            rObj.D = (newTotal === null ? "" : Math.round(newTotal * 0.7 *100)/100);
           }
         }
       }
-
-      for(let i=0;i<hList.length;i++){
-        const rowIndex = 10 + i;
-        if(rowIndex>40) break;
-        const tName = hList[i];
-        rows[rowIndex - 10].H = tName;
-        if(!tName){ rows[rowIndex - 10].I = ""; }
-        else {
-          const useAfter = (j2Date >= thresholdDate);
-          const tr = appState.lookups.transfers[tName];
-          if(tr){
-            const arr = useAfter ? tr.after : tr.before;
-            const idx = (people <= 7) ? 0 : (people <= 15 ? 1 : 2);
-            rows[rowIndex - 10].I = arr[idx] || "";
-          } else {
-            rows[rowIndex - 10].I = "";
-          }
-        }
-      }
-
-      for(const r of rows){
-        const cVal = parseNumber(r.C);
-        if(cVal !== null) r.D = Math.round(cVal * 0.7 * 100)/100;
-      }
-
-      appState.preview.rows = rows;
-
-      let summaryTotal = 0;
-      for(const r of rows){
-        const c = parseNumber(r.C) || 0;
-        const g = parseNumber(r.G) || 0;
-        const i = parseNumber(r.I) || 0;
-        const k = parseNumber(r.K) || 0;
-        summaryTotal += (c + g + i + k);
-      }
-      appState.preview.summaryTotal = Math.round(summaryTotal*100)/100;
-      console.log('Preview computed. People (E3):', people, 'J2 date:', j2Date);
-    }
-
-    // ---------- Render review page with editable fields ----------
-    function renderReviewPage(){
-      $('#reviewQuoteTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
-      computePreviewModel();
-
-      const rows = appState.preview.rows;
-      const detailDiv = $('#detailTables');
-      detailDiv.innerHTML = '';
-
-      // Accommodation table (B/C/D) rows 10..15
-      const accom = appState.preview.accommodationRows;
-      const accomTbl = document.createElement('div');
-      accomTbl.innerHTML = `<h4 class="small">Accommodation (B / C / D)</h4>`;
-      const t1 = document.createElement('table');
-      t1.innerHTML = `<thead><tr><th>Row</th><th>Place</th><th class="numCell">Total ($)</th><th class="numCell">Calc D = 70% ($)</th></tr></thead>`;
-      const b1 = document.createElement('tbody');
-      accom.forEach(a=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${a.rowIndex}</td>
-          <td>${a.place} — <span class="small">nights: ${a.nights} @ ${a.price}</span></td>
-          <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.total===""?"":a.total}"></td>
-          <td class="numCell">${fmt(a.total!==""?Math.round(a.total*0.7*100)/100:"")}</td>`;
-        b1.appendChild(tr);
-      });
-      t1.appendChild(b1); accomTbl.appendChild(t1);
-      detailDiv.appendChild(accomTbl);
-
-      // Sites/Flights table (F/G)
-      const fTblDiv = document.createElement('div'); fTblDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G)</h4>`;
-      const t2 = document.createElement('table');
-      t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (G)</th></tr></thead>`;
-      const b2 = document.createElement('tbody');
-      rows.forEach(r=>{
-        if(r.F !== null && r.F !== ""){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.row}</td>
-            <td>${escapeHtml(r.F)}</td>
-            <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${r.G!==null && r.G!==''?r.G:''}" /></td>`;
-          b2.appendChild(tr);
-        }
-      });
-      t2.appendChild(b2); fTblDiv.appendChild(t2); detailDiv.appendChild(fTblDiv);
-
-      // Transfers table (H / I)
-      const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I)</h4>`;
-      const t3 = document.createElement('table');
-      t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price (I)</th></tr></thead>`;
-      const b3 = document.createElement('tbody');
-      rows.forEach(r=>{
-        if(r.H !== null && r.H !== ""){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.row}</td>
-            <td>${escapeHtml(r.H)}</td>
-            <td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${r.I!==null && r.I!==''?r.I:''}" /></td>`;
-          b3.appendChild(tr);
-        }
-      });
-      t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
-
-      // Meals table (J / K)
-      const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K)</h4>`;
-      const t4 = document.createElement('table');
-      t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (K)</th></tr></thead>`;
-      const b4 = document.createElement('tbody');
-      rows.forEach(r=>{
-        if(r.J !== null && r.J !== ""){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${r.K!==null && r.K!==''?r.K:''}" /></td>`;
-          b4.appendChild(tr);
-        }
-      });
-      t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
-
-      // Additional summary panel
-      $('#reviewSummary').textContent = `Estimated total: $ ${fmt(appState.preview.summaryTotal)}`;
-
-      // wire up editable inputs to update preview object immediately
-      Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
-        inp.addEventListener('input', (ev)=>{
-          const p = inp.dataset.path;
-          const val = parseNumber(inp.value) ?? (inp.value===""? "": inp.value);
-          if(p.startsWith('F:')){
-            const rowNum = Number(inp.dataset.row);
-            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-            if(rowObj) rowObj.G = val;
-          } else if(p.startsWith('H:')){
-            const rowNum = Number(inp.dataset.row);
-            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-            if(rowObj) rowObj.I = val;
-          } else if(p.startsWith('J:')){
-            const rowNum = Number(inp.dataset.row);
-            const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-            if(rowObj) rowObj.K = val;
-          } else if(p.startsWith('accom:')){
-            const parts = p.split(':');
-            const place = parts[1];
-            const rowIndex = Number(inp.dataset.row);
-            const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
-            if(ac){
-              const nVal = parseNumber(inp.value);
-              ac.total = (nVal===null ? "" : nVal);
-              const rowsRow = appState.preview.rows.find(x=>x.row===rowIndex);
-              if(rowsRow) { rowsRow.C = ac.total; rowsRow.D = (ac.total!==""? Math.round(ac.total*0.7*100)/100 : ""); }
-            }
-          }
-          recomputeSummaryAndRender();
-        });
-      });
-
-      showStep(5);
-    }
-
-    function recomputeSummaryAndRender(){
-      let total = 0;
-      for(const r of appState.preview.rows){
-        total += (parseNumber(r.C) || 0) + (parseNumber(r.G) || 0) + (parseNumber(r.I) || 0) + (parseNumber(r.K) || 0);
-      }
-      appState.preview.summaryTotal = Math.round(total*100)/100;
-      $('#reviewSummary').textContent = `Estimated total: $ ${fmt(appState.preview.summaryTotal)}`;
-    }
-
-    // ---------- Utility for sanitized text ----------
-    function escapeHtml(s){
-      if(!s && s!==0) return '';
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    // ---------- When user clicks "Show Review & Edit" (downloadBtn) ----------
-    document.getElementById('downloadBtn').addEventListener('click', ()=>{
-      appState.cairoCounters.apt   = document.getElementById('Cairoapt').value;
-      appState.cairoCounters.fd    = document.getElementById('Cairofd').value;
-      appState.cairoCounters.night = document.getElementById('CairoNight').value;
-
-      appState.trips.CairoGiza = getChecked('#cbCairoGizaTrips');
-      appState.trips.Sharm     = getChecked('#cbSharmTrips');
-      appState.trips.Luxor     = getChecked('#cbLuxorTrips');
-      appState.trips.Aswan     = getChecked('#cbAswanTrips');
-
-      renderReviewPage();
+      recomputeSummaryAndRender();
     });
+  });
 
-    // back button from review to steps
-    document.getElementById('backToSteps').addEventListener('click', ()=>{ showStep(4); });
+  // show step 5
+  showStep(5);
+}
 
-    // apply edits button (push edits back to appState main structures where reasonable)
-    document.getElementById('applyEdits').addEventListener('click', ()=>{
-      let changes = 0;
-      appState.preview.accommodationRows.forEach(ac=>{
-        const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
-        if(rowsRow && parseNumber(rowsRow.C) !== null){
-          const newTotal = parseNumber(rowsRow.C);
-          if(ac.nights > 0 && newTotal !== "" && ac.nights>0){
-            const newPrice = Math.round((newTotal / ac.nights)*100)/100;
-            appState.accommodation[ac.place].price = String(newPrice);
-            changes++;
-          }
-        }
-      });
-      alert(`Applied edits to state (updated ${changes} accommodation prices). You can now re-generate the report to reflect changes.`);
-      computePreviewModel();
-      renderReviewPage();
-    });
+/* ---------- recompute summary ---------- */
+function recomputeSummaryAndRender(){
+  // recompute totals from current preview rows
+  let acc=0, sit=0, tr=0, meal=0;
+  for(const r of appState.preview.rows){
+    acc += parseNumber(r.C) || 0;
+    sit += parseNumber(r.G) || 0;
+    tr += parseNumber(r.I) || 0;
+    meal += parseNumber(r.K) || 0;
+  }
+  appState.preview.totals.accommodation = Math.round(acc*100)/100;
+  appState.preview.totals.sites = Math.round(sit*100)/100;
+  appState.preview.totals.transfers = Math.round(tr*100)/100;
+  appState.preview.totals.meals = Math.round(meal*100)/100;
+  appState.preview.totals.grandLocal = Math.round((acc+sit+tr+meal)*100)/100;
 
-    // ---------- small helper: on page load, prefill some defaults (optional) ----------
-    (function initDefaults(){ /* leave empty - UI shows defaults */ })();
+  $('#sumAccommodation').textContent = `$ ${fmt(appState.preview.totals.accommodation)}`;
+  $('#sumSites').textContent = `$ ${fmt(appState.preview.totals.sites)}`;
+  $('#sumTransfers').textContent = `$ ${fmt(appState.preview.totals.transfers)}`;
+  $('#sumMeals').textContent = `$ ${fmt(appState.preview.totals.meals)}`;
+  $('#grandLocal').textContent = `$ ${fmt(appState.preview.totals.grandLocal)}`;
 
-  </script>
+  const ex = appState.exchangeRate;
+  const usd = (ex && ex>0) ? (appState.preview.totals.grandLocal / ex) : 0;
+  $('#grandUSD').textContent = `$ ${fmt(Math.round(usd*100)/100)}`;
+
+  $('#reviewSummary').textContent = `Estimated total (local): $ ${fmt(appState.preview.totals.grandLocal)}`;
+}
+
+/* ---------- Wire Review page controls ---------- */
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  // gather counters and trips
+  appState.cairoCounters.apt = document.getElementById('Cairoapt').value;
+  appState.cairoCounters.fd = document.getElementById('Cairofd').value;
+  appState.cairoCounters.night = document.getElementById('CairoNight').value;
+
+  appState.trips.CairoGiza = getChecked('#cbCairoGizaTrips');
+  appState.trips.Sharm = getChecked('#cbSharmTrips');
+  appState.trips.Luxor = getChecked('#cbLuxorTrips');
+  appState.trips.Aswan = getChecked('#cbAswanTrips');
+
+  // read pax and date fields if workbook had them else keep defaults
+  // but also pick up pax/date UI if filled before review
+  const inputPaxVal = parseNumber($('#inputPax').value);
+  if(inputPaxVal !== null) appState.people = inputPaxVal;
+  const inputDateVal = $('#inputDate').value;
+  if(inputDateVal){
+    const d = new Date(inputDateVal);
+    if(!isNaN(d)) appState.j2Date = d;
+  }
+  const exVal = parseNumber($('#inputEx').value);
+  if(exVal !== null && exVal>0) appState.exchangeRate = exVal;
+
+  // compute and render
+  renderReviewPage();
+});
+
+$('#backToSteps').addEventListener('click', ()=> showStep(4));
+
+$('#inputPax').addEventListener('change', (ev)=> {
+  const v = parseNumber(ev.target.value);
+  if(v !== null) appState.people = v;
+  computePreviewModel(); recomputeSummaryAndRender();
+});
+$('#inputDate').addEventListener('change', (ev)=>{
+  const d = new Date(ev.target.value);
+  if(!isNaN(d)) appState.j2Date = d;
+  computePreviewModel(); recomputeSummaryAndRender();
+});
+$('#inputEx').addEventListener('change', (ev)=>{
+  const v = parseNumber(ev.target.value);
+  if(v !== null && v>0) appState.exchangeRate = v;
+  recomputeSummaryAndRender();
+});
+
+/* ---------- Apply edits back to state ---------- */
+$('#applyEdits').addEventListener('click', ()=>{
+  // Apply accommodation totals -> update price fields (price = total / nights)
+  let changes = 0;
+  appState.preview.accommodationRows.forEach(ac=>{
+    const rRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
+    if(rRow && parseNumber(rRow.C) !== null){
+      const newTotal = parseNumber(rRow.C);
+      if(ac.nights > 0 && newTotal !== null){
+        const newPrice = Math.round((newTotal / ac.nights) * 100)/100;
+        appState.accommodation[ac.place].price = String(newPrice);
+        changes++;
+      }
+    }
+  });
+
+  // Optionally, we could persist site/tranfer changes too, but it's risky to overwrite lookup sheets.
+  alert(`Applied edits to state: updated ${changes} accommodation price(s).`);
+
+  // Update Step2 selects to reflect changed prices
+  // Update option lists for price selects to include the new price if not present
+  ['ddlPriceCairoGiza','ddlPriceSharm','ddlPriceLuxor','ddlPriceAswan','ddlPriceHurghada','ddlPriceNileCruise'].forEach(selId=>{
+    const el = document.getElementById(selId);
+    if(!el) return;
+    // try to keep current or add new
+  });
+
+  // recompute preview & re-render
+  computePreviewModel();
+  renderReviewPage();
+});
+
+/* ---------- small initialization ---------- */
+(function initDefaults(){
+  // initially fill inputPax, inputDate, inputEx with defaults
+  $('#inputPax').value = appState.people;
+  $('#inputDate').value = (new Date(appState.j2Date)).toISOString().slice(0,10);
+  $('#inputEx').value = appState.exchangeRate;
+})();
+</script>
 </body>
 </html>
