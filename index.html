@@ -26,7 +26,7 @@
     input[type="file"] { padding:10px; border:1px dashed #bbb; border-radius:8px; background:#fafafa; width:100%; }
     .row { display:flex; gap:12px; align-items:center; }
     .row > * { flex:1; }
-    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; }
+    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; flex-wrap:wrap; }
     button { appearance:none; border:none; background:var(--pri); color:#fff; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
     button.secondary { background:#e9ecef; color:#111; }
     button:hover { background:var(--pri-d); }
@@ -36,19 +36,35 @@
     .checks { max-height:260px; overflow:auto; border:1px solid #eee; padding:10px; border-radius:8px; background:#fafafa; }
     .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; }
     .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#333; }
+
+    /* ---- Step 5 Results styling (additions) ---- */
+    .results-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .results-title { font-size:20px; font-weight:700; }
+    .resnote { color:var(--muted); font-size:12px; }
+    .table-wrap { overflow:auto; border:1px solid #eee; border-radius:12px; }
+    table { width:100%; border-collapse:collapse; background:#fff; }
+    thead th { background:#f7f8ff; text-align:left; font-size:13px; color:#333; padding:10px 12px; position:sticky; top:0; }
+    tbody td { border-top:1px solid #eee; padding:10px 12px; font-size:14px; }
+    tbody td[contenteditable="true"] { background:#fffdf7; outline:none; }
+    tbody td[contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px #ffe08a; background:#fff9e6; }
+    .two-col { grid-template-columns: 1fr 1fr; }
+    .results-grid { display:grid; gap:16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr; } }
+    .kicker { color:#555; font-size:12px; margin-bottom:8px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Quotation Builder</h1>
-    <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill steps, then download.</div>
+    <div class="sub">Upload <b>newbasequotation.xlsx</b>, fill steps, then review & download.</div>
 
     <div class="steps">
       <span class="pill">1) Upload & Sites</span>
       <span class="pill">2) Accommodation</span>
       <span class="pill">3) Meals & Guides</span>
       <span class="pill">4) Trips & Export</span>
+      <span class="pill">5) Review & Edit</span>
     </div>
 
     <!-- STEP 1 -->
@@ -269,7 +285,76 @@
 
       <div class="buttons">
         <button class="secondary" id="back3" type="button">← Back</button>
-        <button id="downloadBtn" type="button">Download Quotation (.xlsx)</button>
+        <!-- Same ID kept; behavior now opens Step 5 to review & edit -->
+        <button id="downloadBtn" type="button">Review → Results Page</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 (NEW) -->
+    <section class="step" id="step5">
+      <div class="results-header">
+        <div class="results-title">Results — <span id="resQuoteName"></span></div>
+        <div class="resnote">Click any highlighted cell to edit. Changes will be saved back to the workbook.</div>
+      </div>
+
+      <div class="results-grid">
+        <div class="card">
+          <div class="kicker">Flight Ticket & Sites (Excel F10–G40)</div>
+          <div class="table-wrap">
+            <table id="tblSites">
+              <thead><tr><th style="width:60%">F (Item)</th><th style="width:40%">G (Value)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="kicker">Trips (Excel H10–H40)</div>
+          <div class="table-wrap">
+            <table id="tblTrips">
+              <thead><tr><th>H (Trip)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="kicker">Accommodation (Excel B10–C15)</div>
+          <div class="table-wrap">
+            <table id="tblAccommodation">
+              <thead><tr><th style="width:70%">B (Description)</th><th style="width:30%">C (Cost)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="kicker">Meals (Excel J10–K20)</div>
+          <div class="table-wrap">
+            <table id="tblMeals">
+              <thead><tr><th style="width:70%">J (Description)</th><th style="width:30%">K (Cost)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="kicker">Guide Extras (Excel L12–M13)</div>
+          <div class="table-wrap">
+            <table id="tblGuide">
+              <thead><tr><th style="width:70%">L (Label)</th><th style="width:30%">M (Value)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="buttons" style="margin-top:16px;">
+        <button class="secondary" id="back4" type="button">← Back</button>
+        <div style="display:flex; gap:8px;">
+          <button id="btnSaveEdits" type="button">Save Edits</button>
+          <button id="btnSaveAndDownload" type="button">Save Edits & Download (.xlsx)</button>
+        </div>
       </div>
     </section>
   </div>
@@ -477,9 +562,13 @@
     function set(ws, addr, value){
       ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
     }
+    function get(ws, addr){
+      const cell = ws[addr];
+      if(!cell) return "";
+      return (cell.t === 'n') ? String(cell.v) : (cell.v ?? "");
+    }
     function ensureRef(ws, minA1, maxA1){
       const dec = r=>XLSX.utils.decode_cell(r);
-      const enc = o=>XLSX.utils.encode_cell(o);
       const min = dec(minA1), max = dec(maxA1);
       const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
       const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
@@ -487,6 +576,7 @@
       ws['!ref'] = XLSX.utils.encode_range({s,e});
     }
 
+    // --- Original function kept exactly (still downloads from state) ---
     function writeExcelAndDownload(){
       if(!appState.workbook){ alert('No workbook loaded.'); return; }
       const sheetName = appState.workbook.SheetNames[0];
@@ -569,7 +659,198 @@
       document.body.appendChild(a); a.click(); a.remove();
     }
 
-    // ---------- Collect Step4 and Download ----------
+    // ---------- NEW: Write only (no download) ----------
+    function writeExcelToWorkbookOnly(){
+      if(!appState.workbook){ alert('No workbook loaded.'); return; }
+      const sheetName = appState.workbook.SheetNames[0];
+      const ws = appState.workbook.Sheets[sheetName];
+
+      // Sites + Flight Ticket
+      let rowF = 10;
+      const ft = n(appState.flightTicket);
+      if(ft !== null){
+        set(ws, `F${rowF}`, "Flight Ticket");
+        set(ws, `G${rowF}`, ft);
+        rowF++;
+      }
+      for(const item of appState.sites){
+        if(rowF > 40) break;
+        set(ws, `F${rowF}`, item);
+        rowF++;
+      }
+
+      // Guide extras
+      const guideTicket = n(appState.guideTicket);
+      if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+      const guideAcc = n(appState.guideAccomodation);
+      if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+
+      // Trips H10..H40
+      let rowH = 10;
+      const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+      const cntApt = n(appState.cairoCounters.apt) || 0;
+      for(let i=0;i<cntApt;i++) addH("Cairo apt");
+      const cntFd = n(appState.cairoCounters.fd) || 0;
+      for(let i=0;i<cntFd;i++) addH("Cairo fd");
+      const cntNight = n(appState.cairoCounters.night) || 0;
+      for(let i=0;i<cntNight;i++) addH("Cairo night");
+      [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+
+      // Accommodation B/C rows 10..15
+      function fillAccommodation(place, nights, price, rowIndex){
+        const ni = n(nights) || 0;
+        const pi = n(price) || 0;
+        if(ni>0 && pi>0){
+          set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
+          set(ws, `C${rowIndex}`, ni * pi);
+        } else {
+          set(ws, `B${rowIndex}`, "");
+          set(ws, `C${rowIndex}`, "");
+        }
+      }
+      fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
+      fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
+      fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
+      fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
+      fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
+      fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
+
+      // Meals J/K rows 10..20
+      let currentRowJ = 10, currentRowK = 10;
+      function writeMeals(mealCategory, mealsQuantityStr){
+        const q = n(mealsQuantityStr);
+        if(q && q>0){
+          set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
+          set(ws, `K${currentRowK}`, q * n(mealCategory));
+          currentRowJ++; currentRowK++;
+        }
+      }
+      mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
+      for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "");
+
+      ensureRef(ws, 'A1', 'M40');
+      return ws;
+    }
+
+    // ---------- NEW: Results builder ----------
+    function makeCell(tag, addr, text, editable=true){
+      const td = document.createElement(tag);
+      if(editable){ td.setAttribute('contenteditable', 'true'); }
+      td.dataset.cell = addr;
+      td.textContent = text ?? "";
+      return td;
+    }
+
+    function buildTableRows(ws){
+      // Sites / Flight Ticket: F10..F40 (G for value)
+      const sitesBody = document.querySelector('#tblSites tbody');
+      sitesBody.innerHTML = '';
+      for(let r=10; r<=40; r++){
+        const f = get(ws, `F${r}`);
+        const g = get(ws, `G${r}`);
+        if(f || g){
+          const tr = document.createElement('tr');
+          tr.appendChild(makeCell('td', `F${r}`, f));
+          tr.appendChild(makeCell('td', `G${r}`, g));
+          sitesBody.appendChild(tr);
+        }
+      }
+
+      // Trips: H10..H40
+      const tripsBody = document.querySelector('#tblTrips tbody');
+      tripsBody.innerHTML = '';
+      for(let r=10; r<=40; r++){
+        const h = get(ws, `H${r}`);
+        if(h){
+          const tr = document.createElement('tr');
+          tr.appendChild(makeCell('td', `H${r}`, h));
+          tripsBody.appendChild(tr);
+        }
+      }
+
+      // Accommodation: B10..C15
+      const accBody = document.querySelector('#tblAccommodation tbody');
+      accBody.innerHTML = '';
+      for(let r=10; r<=15; r++){
+        const b = get(ws, `B${r}`);
+        const c = get(ws, `C${r}`);
+        if(b || c){
+          const tr = document.createElement('tr');
+          tr.appendChild(makeCell('td', `B${r}`, b));
+          tr.appendChild(makeCell('td', `C${r}`, c));
+          accBody.appendChild(tr);
+        }
+      }
+
+      // Meals: J10..K20
+      const mealsBody = document.querySelector('#tblMeals tbody');
+      mealsBody.innerHTML = '';
+      for(let r=10; r<=20; r++){
+        const j = get(ws, `J${r}`);
+        const k = get(ws, `K${r}`);
+        if(j || k){
+          const tr = document.createElement('tr');
+          tr.appendChild(makeCell('td', `J${r}`, j));
+          tr.appendChild(makeCell('td', `K${r}`, k));
+          mealsBody.appendChild(tr);
+        }
+      }
+
+      // Guide: L12..M13
+      const guideBody = document.querySelector('#tblGuide tbody');
+      guideBody.innerHTML = '';
+      for(let r=12; r<=13; r++){
+        const l = get(ws, `L${r}`);
+        const m = get(ws, `M${r}`);
+        if(l || m){
+          const tr = document.createElement('tr');
+          tr.appendChild(makeCell('td', `L${r}`, l));
+          tr.appendChild(makeCell('td', `M${r}`, m));
+          guideBody.appendChild(tr);
+        }
+      }
+    }
+
+    function showResults(){
+      if(!appState.workbook){ alert('No workbook loaded.'); return; }
+      const sheetName = appState.workbook.SheetNames[0];
+      const ws = appState.workbook.Sheets[sheetName];
+      $('#resQuoteName').textContent = appState.quotationName || '(Untitled)';
+      buildTableRows(ws);
+      showStep(5);
+    }
+
+    // ---------- NEW: Save edited table cells back to worksheet ----------
+    function saveEditsIntoWorkbook(){
+      if(!appState.workbook){ alert('No workbook loaded.'); return; }
+      const sheetName = appState.workbook.SheetNames[0];
+      const ws = appState.workbook.Sheets[sheetName];
+      const cells = document.querySelectorAll('[data-cell]');
+      cells.forEach(cell=>{
+        const addr = cell.dataset.cell;
+        const raw = cell.textContent ?? '';
+        const num = parseFloat(raw);
+        if(!isNaN(num) && raw.trim() !== ''){
+          set(ws, addr, num);
+        } else {
+          set(ws, addr, raw);
+        }
+      });
+      ensureRef(ws, 'A1', 'M40');
+    }
+
+    // ---------- NEW: Download current workbook (no recompute) ----------
+    function downloadCurrentWorkbook(){
+      if(!appState.workbook){ alert('No workbook loaded.'); return; }
+      const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+      const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // ---------- Collect Step4 and move to Results ----------
     document.getElementById('downloadBtn').onclick = ()=>{
       // Counters
       appState.cairoCounters.apt   = document.getElementById('Cairoapt').value;
@@ -582,7 +863,20 @@
       appState.trips.Luxor     = getChecked('#cbLuxorTrips');
       appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
-      writeExcelAndDownload();
+      // Write to workbook (no download), then show results
+      writeExcelToWorkbookOnly();
+      showResults();
+    };
+
+    // ---------- Step 5 buttons ----------
+    document.getElementById('back4').onclick = ()=> showStep(4);
+    document.getElementById('btnSaveEdits').onclick = ()=>{
+      saveEditsIntoWorkbook();
+      alert('Edits saved into the workbook (in memory). You can now download or keep editing.');
+    };
+    document.getElementById('btnSaveAndDownload').onclick = ()=>{
+      saveEditsIntoWorkbook();
+      downloadCurrentWorkbook();
     };
 
     // ---------- Also collect Step1/Step4 site lists on navigation back/forward ----------
@@ -592,4 +886,3 @@
   </script>
 </body>
 </html>
-
