@@ -3,1023 +3,1106 @@
 <head>
   <meta charset="utf-8" />
   <title>Quotation Builder — Full</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{
-      --bg:#f4f6fb; --card:#ffffff; --pri:#0b5fff; --muted:#6b7280;
-    }
-    *{box-sizing:border-box}
-    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background:var(--bg); color:#111}
-    .wrap{max-width:1200px;margin:28px auto;padding:20px;background:var(--card);border-radius:12px;box-shadow:0 10px 40px rgba(2,6,23,.06)}
-    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}
-    h1{margin:0;font-size:20px}
-    .muted{color:var(--muted);font-size:13px}
-    .steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-    .pill{padding:6px 10px;border-radius:999px;background:#eef4ff;color:#0b4bcc;font-weight:700;font-size:12px}
-    .grid{display:grid;gap:16px}
-    .cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .card{padding:14px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid #edf2ff}
-    label{display:block;font-size:13px;margin-bottom:8px;color:#0b274c}
-    input[type="text"],input[type="number"],select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eefc;background:#fff}
-    input[type="file"]{padding:10px;border-radius:8px;border:1px dashed #dfeafe;background:#fbfdff}
-    .row{display:flex;gap:12px;align-items:center}
-    .row> *{flex:1}
-    .buttons{display:flex;justify-content:space-between;margin-top:14px;gap:12px}
-    button{padding:10px 14px;border-radius:10px;border:0;background:var(--pri);color:#fff;font-weight:700;cursor:pointer}
-    button.secondary{background:#eef4ff;color:var(--pri);border:1px solid #e3edff}
-    .checks{max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #eef6ff}
-    .checks label{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:14px}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{padding:8px;border-bottom:1px solid #eef4ff;text-align:left;font-size:13px}
-    th{background:#fbfdff;color:#0b4bcc;font-weight:700}
-    .numCell{width:140px;text-align:right}
-    .editable{background:#fffbe6;border:1px dashed #ffe58f;padding:6px 8px;border-radius:6px;min-width:80px;text-align:right}
-    .summary{font-weight:800;color:var(--pri);font-size:16px;text-align:right}
-    .badge{display:inline-block;padding:6px 8px;background:#eef4ff;color:var(--pri);border-radius:8px;font-weight:700}
+    :root { --bg:#f4f4f9; --fg:#222; --muted:#666; --card:#fff; --pri:#0b5fff; --pri-d:#0848c7; --accent:#06b6d4; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); }
+    .container { max-width:1200px; margin:28px auto; padding:20px; background:var(--card); border-radius:14px; box-shadow:0 12px 40px rgba(2,6,23,.08); }
+    header { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    h1 { margin:0; font-size:22px; }
+    .sub { color:var(--muted); margin:8px 0 18px; }
+    .steps { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:13px; }
+    .step { display:none; }
+    .step.active { display:block; }
+    .grid { display:grid; gap:16px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding:16px; border:1px solid #e8eef7; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); box-shadow:0 4px 16px rgba(11,95,255,.03); }
+    .card h3 { margin:0 0 10px; font-size:16px; color:var(--accent); }
+    label { display:block; margin:6px 0; color:#333; font-size:13px; }
+    input[type="text"], input[type="number"], select, textarea { width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+    input[type="file"] { padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#fafafa; width:100%; }
+    .row { display:flex; gap:12px; align-items:center; }
+    .row > * { flex:1; }
+    .buttons { display:flex; justify-content:space-between; gap:12px; margin-top:16px; }
+    button { appearance:none; border:none; background:var(--pri); color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; box-shadow:0 6px 18px rgba(11,95,255,.08); }
+    button.secondary { background:#eef2ff; color:var(--pri); border:1px solid #e6f0ff; }
+    button.ghost { background:transparent; color:var(--pri); border:1px dashed #cfe6ff; }
+    button:hover { filter:brightness(.95); transform:translateY(-1px); }
+    .hint { color:var(--muted); font-size:13px; margin-top:6px; }
+    .stack { display:flex; flex-direction:column; gap:8px; }
+    .checks { max-height:260px; overflow:auto; border:1px solid #eef2f6; padding:10px; border-radius:8px; background:#fcfeff; }
+    .checks label { display:flex; gap:8px; align-items:center; margin:4px 0; font-size:14px; }
+    .section-title { font-size:14px; font-weight:700; margin:8px 0; color:#0b5fff; }
+
+    /* review styles */
+    .review-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .review-area { display:grid; gap:16px; grid-template-columns: 1fr 380px; }
+    .review-left, .review-right { padding:12px; border-radius:10px; background:#fff; border:1px solid #eef5ff; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid #f1f5f9; padding:8px 6px; text-align:left; vertical-align:middle; }
+    th { background:linear-gradient(90deg,#fbfdff,#f5fbff); color:#0b4bcc; font-weight:700; }
+    .numCell { width:120px; text-align:right; }
+    .editable { background:#fffbe6; border:1px dashed #ffe58f; padding:6px 8px; border-radius:6px; min-width:60px; text-align:right; }
+    .muted { color:var(--muted); font-size:13px; }
+    .summary { font-size:15px; font-weight:700; color:#0b5fff; text-align:right; }
+    .small { font-size:12px; color:var(--muted); }
+    .badge { display:inline-block; padding:6px 8px; border-radius:8px; font-weight:700; background:#eef2ff; color:#0b5fff; font-size:13px; }
+    .section-subtotal { font-weight:700; text-align:right; padding-top:8px; }
   </style>
 
-  <!-- sheetjs -->
+  <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
     <header>
       <div>
-        <h1>Quotation Builder — Full</h1>
-        <div class="muted">Upload your workbook (client-side). Review & edit results live (no server).</div>
+        <h1>Quotation Builder</h1>
+        <div class="sub">Upload your workbook (any name). This tool reads the Transfers & Sites sheets, runs the formulas and shows a live editable report (no download required).</div>
       </div>
-      <div class="muted">Client-only · SheetJS</div>
+      <div class="muted small">Client-only (SheetJS)</div>
     </header>
 
     <div class="steps" aria-hidden>
-      <span class="pill">1 Upload</span>
-      <span class="pill">2 Inputs</span>
-      <span class="pill">3 Review</span>
+      <span class="pill">1) Upload & Sites</span>
+      <span class="pill">2) Accommodation</span>
+      <span class="pill">3) Meals & Guides</span>
+      <span class="pill">4) Trips & Export</span>
+      <span class="pill">5) Review & Edit</span>
     </div>
 
     <!-- STEP 1 -->
-    <section id="step1" class="card">
+    <section id="step1" class="step active">
       <div class="grid cols-2">
-        <div class="card" style="padding:12px">
-          <label>Upload Excel (.xlsx)</label>
-          <input id="upload" type="file" accept=".xlsx" />
-          <div class="muted" style="margin-top:8px">We will read Sites, Transfers, Accommodation, Meals sheets (case-insensitive contains).</div>
+        <div class="card">
+          <h3>Upload Excel (.xlsx)</h3>
+          <input type="file" id="upload" accept=".xlsx" />
+          <div class="hint">We will parse the workbook and use the Transfers & Sites sheets dynamically.</div>
         </div>
-
-        <div class="card" style="padding:12px">
-          <label>Quotation Name</label>
-          <input id="quotationName" type="text" placeholder="e.g. Smith Family Tour" />
-          <label style="margin-top:8px">Flight Ticket (number)</label>
-          <input id="flightTicket" type="number" inputmode="numeric" placeholder="e.g. 2" />
-          <div class="buttons">
-            <button class="secondary" id="resetBtn1" type="button">Reset</button>
-            <button id="toStep2" type="button">Next → Inputs</button>
+        <div class="card">
+          <h3>Quotation Info</h3>
+          <div class="stack">
+            <label>Quotation Name <input id="quotationName" type="text" placeholder="e.g. Smith Family Tour" /></label>
+            <label>Flight Ticket (number) <input id="flightTicket" type="text" inputmode="numeric" placeholder="e.g. 2" /></label>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:16px" class="grid cols-3">
+      <div class="grid cols-2" style="margin-top:16px;">
         <div class="card">
-          <h4 style="margin:0 0 8px">Sites (examples)</h4>
-          <div id="previewSites" class="muted small">After upload, lists populate.</div>
+          <h3>Pyramids</h3>
+          <div class="checks" id="cbPyramids"></div>
         </div>
         <div class="card">
-          <h4 style="margin:0 0 8px">Transfers (preview)</h4>
-          <div id="previewTransfers" class="muted small"></div>
+          <h3>Sakkara</h3>
+          <div class="checks" id="cbSakkara"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Cairo/Giza</h3>
+          <div class="checks" id="cbCairoGiza"></div>
         </div>
         <div class="card">
-          <h4 style="margin:0 0 8px">Notes</h4>
-          <div class="muted small">You can override Pax & Date in Inputs step; Excel values are used as defaults if present.</div>
+          <h3>Alexandria/Behera</h3>
+          <div class="checks" id="cbAlexBehera"></div>
         </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Kafr el Sheikh / Sharkia / Minya / Sohag / Qena</h3>
+          <div class="checks" id="cbKafrEtAl"></div>
+        </div>
+        <div class="card">
+          <h3>Luxor</h3>
+          <div class="checks" id="cbLuxor"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Aswan</h3>
+          <div class="checks" id="cbAswan"></div>
+        </div>
+        <div class="card">
+          <h3>Sharm el Sheikh</h3>
+          <div class="checks" id="cbSharm"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Mosques</h3>
+          <div class="checks" id="cbMosques"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="resetBtn1" type="button">Reset</button>
+        <button id="toStep2" type="button">Next → Accommodation</button>
       </div>
     </section>
 
-    <!-- STEP 2: Inputs -->
-    <section id="step2" class="card" style="display:none;margin-top:16px">
+    <!-- STEP 2 -->
+    <section id="step2" class="step">
       <div class="grid cols-2">
         <div class="card">
-          <label>Pax (E3) — will determine transfer column</label>
-          <input id="inputPax" type="number" min="1" value="2" />
-          <label style="margin-top:8px">Quote date (J2) — affects site/transfer column choice</label>
-          <input id="inputDate" type="date" />
-          <label style="margin-top:8px">Exchange rate (M2) — EGP → USD (use numeric)</label>
-          <input id="inputXRate" type="number" step="0.01" value="47.7" />
-        </div>
-
-        <div class="card">
-          <label>Accommodation (choose nights & price)</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label>Cairo/Giza nights</label>
+          <h3>Cairo/Giza</h3>
+          <div class="row">
+            <label>Nights
               <select id="ddlNightsCairoGiza"></select>
-            </div>
-            <div>
-              <label>Price/Night (USD)</label>
+            </label>
+            <label>Price/Night (local currency)
               <select id="ddlPriceCairoGiza"></select>
-            </div>
-            <div>
-              <label>Sharm nights</label>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Sharm el Sheikh</h3>
+          <div class="row">
+            <label>Nights
               <select id="ddlNightsSharm"></select>
-            </div>
-            <div>
-              <label>Price/Night (USD)</label>
+            </label>
+            <label>Price/Night (local currency)
               <select id="ddlPriceSharm"></select>
-            </div>
-            <div>
-              <label>Luxor nights</label>
-              <select id="ddlNightsLuxor"></select>
-            </div>
-            <div>
-              <label>Price/Night (USD)</label>
-              <select id="ddlPriceLuxor"></select>
-            </div>
-            <div>
-              <label>Aswan nights</label>
-              <select id="ddlNightsAswan"></select>
-            </div>
-            <div>
-              <label>Price/Night (USD)</label>
-              <select id="ddlPriceAswan"></select>
-            </div>
+            </label>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:12px" class="grid cols-2">
+      <div class="grid cols-2" style="margin-top:16px;">
         <div class="card">
-          <h4 style="margin-top:0">Meals</h4>
-          <div id="mealsSelects"></div>
+          <h3>Luxor</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsLuxor"></select>
+            </label>
+            <label>Price/Night (local currency)
+              <select id="ddlPriceLuxor"></select>
+            </label>
+          </div>
         </div>
         <div class="card">
-          <h4 style="margin-top:0">Trips / Transfers counters</h4>
-          <label>Cairo apt <select id="Cairoapt"></select></label>
-          <label>Cairo full day <select id="Cairofd"></select></label>
-          <label>Cairo night <select id="CairoNight"></select></label>
-          <div class="muted" style="margin-top:8px">Pick counts; trips are selected on earlier lists (Step1 checkboxes)</div>
+          <h3>Aswan</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsAswan"></select>
+            </label>
+            <label>Price/Night (local currency)
+              <select id="ddlPriceAswan"></select>
+            </label>
+          </div>
         </div>
       </div>
 
-      <div class="buttons" style="margin-top:14px">
-        <button class="secondary" id="backToStep1">← Back</button>
-        <button id="toReview">Show Review & Edit →</button>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Hurghada</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsHurghada"></select>
+            </label>
+            <label>Price/Night (local currency)
+              <select id="ddlPriceHurghada"></select>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Nile Cruise</h3>
+          <div class="row">
+            <label>Nights
+              <select id="ddlNightsNileCruise"></select>
+            </label>
+            <label>Price/Night (local currency)
+              <select id="ddlPriceNileCruise"></select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h3>Controls used by formulas</h3>
+        <div class="row">
+          <label>Number of Pax (E3) — you can edit or leave blank to use workbook E3:
+            <input id="numPax" type="number" min="1" placeholder="leave blank to use workbook E3" />
+          </label>
+          <label>Quote Date (J2) — you can edit or leave blank to use workbook J2:
+            <input id="quoteDate" type="date" />
+          </label>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <label>Exchange Rate (M2) — local currency → USD (divide local / rate). Default 47.7
+            <input id="exchangeRate" type="number" step="0.01" value="47.7" />
+          </label>
+          <label style="align-self:center; font-size:12px; color:var(--muted)">Tip: site & transfer prices are treated as local currency and will be converted to USD in the report.</label>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="back1" type="button">← Back</button>
+        <button id="toStep3" type="button">Next → Meals & Guides</button>
       </div>
     </section>
 
-    <!-- STEP 3: Review & Edit -->
-    <section id="stepReview" class="card" style="display:none;margin-top:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><span class="badge">Review & Edit</span> <span id="reviewTitle" class="muted" style="margin-left:10px"></span></div>
-        <div>
-          <button class="secondary" id="backToInputs">← Back to inputs</button>
-          <button id="applyEdits" class="secondary">Apply Edits to State</button>
+    <!-- STEP 3 -->
+    <section id="step3" class="step">
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Guide Ticket</h3>
+          <input id="TextBoxGuideTicket" type="text" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="card">
+          <h3>Guide Accommodation</h3>
+          <input id="TextBoxGuideAccomodation" type="text" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="card">
+          <h3>Meals per Price Tier (local currency)</h3>
+          <div class="stack" id="mealsSelects"></div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 360px;gap:16px">
-        <div class="card" id="detailLeft" style="padding:10px">
-          <h4 style="margin:6px 0">Detail Rows (B..M mapped to Rows 10..40)</h4>
-          <div id="detailTables"></div>
+      <div class="buttons">
+        <button class="secondary" id="back2" type="button">← Back</button>
+        <button id="toStep4" type="button">Next → Trips & Export</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section id="step4" class="step">
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Cairo/Giza Counters</h3>
+          <label>Cairo apt
+            <select id="Cairoapt"></select>
+          </label>
+          <label>Cairo Full Day
+            <select id="Cairofd"></select>
+          </label>
+          <label>Cairo Night
+            <select id="CairoNight"></select>
+          </label>
         </div>
 
-        <div class="card" id="detailRight" style="padding:10px">
-          <h4 style="margin:6px 0">Summary</h4>
-          <div id="summaryPanel" class="summary">Computing...</div>
-          <div style="height:12px"></div>
-          <div class="muted small">Editable yellow fields update preview totals live. Use "Apply Edits to State" to persist accommodation price changes back to the inputs.</div>
+        <div class="card">
+          <h3>Cairo/Giza Trips</h3>
+          <div class="checks" id="cbCairoGizaTrips"></div>
+        </div>
+
+        <div class="card">
+          <h3>Sharm Trips</h3>
+          <div class="checks" id="cbSharmTrips"></div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h3>Luxor Trips</h3>
+          <div class="checks" id="cbLuxorTrips"></div>
+        </div>
+        <div class="card">
+          <h3>Aswan Trips</h3>
+          <div class="checks" id="cbAswanTrips"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="secondary" id="back3" type="button">← Back</button>
+        <button id="downloadBtn" type="button">Show Review & Edit</button>
+      </div>
+    </section>
+
+    <!-- STEP 5: Review & Edit -->
+    <section id="step5" class="step" aria-live="polite">
+      <div class="card">
+        <div class="review-toolbar">
+          <div>
+            <span class="badge">Review & Edit</span>
+            <span id="reviewQuoteTitle" class="muted"></span>
+          </div>
+          <div>
+            <button class="secondary" id="backToSteps">← Back to steps</button>
+            <button id="applyEdits" class="ghost">Apply Edits to State</button>
+          </div>
+        </div>
+
+        <div class="review-area">
+          <div class="review-left" id="reviewLeft">
+            <h3 style="margin-top:0">Detail Rows (Rows 10 → 40)</h3>
+            <div id="detailTables"></div>
+          </div>
+
+          <div class="review-right" id="reviewRight">
+            <h3 style="margin-top:0">Summary</h3>
+            <div id="reviewSummary" class="summary">Computing...</div>
+            <div style="height:12px"></div>
+            <div class="small muted">Editable numeric fields are highlighted yellow. Changes recompute totals immediately. Click "Apply Edits to State" to persist accommodation price changes back to the form.</div>
+            <div style="height:12px"></div>
+            <div id="sectionSubtotals" class="small"></div>
+          </div>
         </div>
       </div>
     </section>
+
   </div>
 
-<script>
-/* ------------- App state (keeps all functions/data) -------------- */
-const appState = {
-  workbook: null,
-  sheetName: null,
-  quotationName: '',
-  flightTicket: '',
-  // UI/inputs
-  pax: 2, // default (overridable)
-  quoteDate: null, // Date object
-  xRate: 47.7, // EGP -> USD
-  // selections from checkboxes (Step1 kept for compatibility)
-  sitesSelected: [],
-  tripsSelected: { CairoGiza: [], Sharm: [], Luxor: [], Aswan: [] },
-  // accommodation choices
-  accommodation: {
-    "Cairo/Giza": { nights: "0", price: "0" },
-    "Sharm el Sheikh": { nights: "0", price: "0" },
-    "Luxor": { nights: "0", price: "0" },
-    "Aswan": { nights: "0", price: "0" },
-    "Hurghada": { nights: "0", price: "0" },
-    "Nile Cruise": { nights: "0", price: "0" },
-  },
-  // meals
-  meals: {"300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0"},
-  // transfers counters
-  cairoCounters: { apt:"0", fd:"0", night:"0" },
+  <script>
+  // ---------- Full appState (keeps everything) ----------
+  const appState = {
+    workbook: null,
+    sheetName: null,
+    quotationName: "",
+    flightTicket: "",
+    // step inputs
+    sites: [],
+    accommodation: {
+      "Cairo/Giza": { nights: "0", price: "0" },
+      "Sharm el Sheikh": { nights: "0", price: "0" },
+      "Luxor": { nights: "0", price: "0" },
+      "Aswan": { nights: "0", price: "0" },
+      "Hurghada": { nights: "0", price: "0" },
+      "Nile Cruise": { nights: "0", price: "0" },
+    },
+    guideTicket: "",
+    guideAccomodation: "",
+    meals: { "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0" },
+    cairoCounters: { apt:"0", fd:"0", night:"0" },
+    trips: { "CairoGiza": [], "Sharm": [], "Luxor": [], "Aswan": [] },
 
-  // lookups parsed from workbook
-  lookups: {
-    sites: {},        // name -> { before: number, after: number }
-    transfers: { before: {}, after: {} }, // name -> arrays [col2,col3,col4]
-    meals: {}, // optional label->price (EGP)
-    accommodationSheet: [] // optional
-  },
+    // lookups read from uploaded workbook
+    lookups: { sites: {}, transfers: {} },
 
-  // preview model computed for display rows 10..40
-  preview: { rows: [], accommodationRows: [], mealRows: [], summary: {} }
-};
-
-/* ---------------- Helpers ---------------- */
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const num = Number(String(v).toString().replace(/[, ]+/g,'')); return Number.isFinite(num) ? num : null; }
-function fmt(n){ if(n===null||n===undefined||n==='') return ''; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
-function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-/* ---------------- Static lists (used to build Checkboxes UI — preserved) ---------------- */
-const lists = {
-  Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
-  Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
-  CairoGiza: ["Grand Egyptian Museum","Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
-  AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
-  KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
-  Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
-  Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
-  Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
-  Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"]
-};
-
-/* ---------------- Render checklists (preserve original UI) ---------------- */
-function renderChecks(container, items){
-  const el = document.querySelector(container);
-  if(!el) return;
-  el.innerHTML = '';
-  items.forEach(txt=>{
-    const id = (container.slice(1) + "_" + txt.replace(/\W+/g,'_')).slice(0,80);
-    const lbl = document.createElement('label');
-    const cb = document.createElement('input'); cb.type='checkbox'; cb.value=txt; cb.id=id;
-    const span = document.createElement('span'); span.textContent = " " + txt;
-    lbl.appendChild(cb); lbl.appendChild(span);
-    el.appendChild(lbl);
-  });
-}
-renderChecks('#previewSites', lists.Pyramids.slice(0,5)); // placeholder until upload
-
-/* ---------------- Populate selects for nights/prices/meals ---------------- */
-function optionRange(sel, from, to, withZero=false){
-  if(!sel) return;
-  sel.innerHTML = '';
-  if(withZero){
-    const o = document.createElement('option'); o.value='0'; o.text='0'; sel.appendChild(o);
-  }
-  for(let i=from;i<=to;i++){ const o = document.createElement('option'); o.value=String(i); o.text=String(i); sel.appendChild(o);}
-}
-function fillPrice(selId, arr){ const el=document.getElementById(selId); if(!el) return; el.innerHTML=''; arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o); }); }
-const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
-const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
-['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'].forEach(id=>optionRange(document.getElementById(id),0,10,true));
-fillPrice('ddlPriceCairoGiza', price30to150); fillPrice('ddlPriceSharm', price30to150); fillPrice('ddlPriceLuxor', price30to150); fillPrice('ddlPriceAswan', price30to150); fillPrice('ddlPriceHurghada', price30to150); fillPrice('ddlPriceNileCruise', priceNileCruise);
-['Cairoapt','Cairofd','CairoNight'].forEach(id=>optionRange(document.getElementById(id),0,5,true));
-const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
-const mealsWrap = document.getElementById('mealsSelects');
-mealTiers.forEach(tier=>{
-  const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.marginBottom='6px';
-  const lbl = document.createElement('label'); lbl.textContent = `${tier} Meals`; lbl.style.flex='1';
-  const sel = document.createElement('select'); sel.id='ddlMeals'+tier; sel.style.width='120px';
-  optionRange(sel,0,6,true);
-  row.appendChild(lbl); row.appendChild(sel);
-  mealsWrap.appendChild(row);
-});
-
-/* ---------------- Upload & parse workbook ---------------- */
-$('#upload').addEventListener('change', e=>{
-  const f = e.target.files[0]; if(!f) return;
-  const reader = new FileReader();
-  reader.onload = ev=>{
-    try{
-      const data = new Uint8Array(ev.target.result);
-      appState.workbook = XLSX.read(data, {type:'array'});
-      appState.sheetName = appState.workbook.SheetNames[0];
-      parseLookupsFromWorkbook();
-      // Prefill pax/date/xrate from workbook if present
-      const mainSheet = appState.workbook.Sheets[appState.sheetName];
-      const e3 = readCell(mainSheet,'E3'); if(parseNumber(e3)!==null) { appState.pax = parseNumber(e3); $('#inputPax').value = appState.pax; }
-      const j2 = readCell(mainSheet,'J2'); if(j2){ // attempt to parse
-        let d=null;
-        if(j2 instanceof Date) d=j2;
-        else if(typeof j2==='number'){ const o = XLSX.SSF.parse_date_code(j2); if(o) d = new Date(o.y,o.m-1,o.d); }
-        else if(typeof j2==='string'){ const tmp=new Date(j2); if(!isNaN(tmp)) d=tmp; }
-        if(d){ appState.quoteDate = d; $('#inputDate').value = d.toISOString().slice(0,10); }
-      }
-      const m2 = readCell(mainSheet,'M2'); if(parseNumber(m2)!==null){ appState.xRate = parseNumber(m2); $('#inputXRate').value = appState.xRate; }
-      $('#previewSites').textContent = Object.keys(appState.lookups.sites).slice(0,40).join(', ') || 'No Sites found in workbook (sheet name contains "site")';
-      $('#previewTransfers').textContent = Object.keys(appState.lookups.transfers.before).slice(0,40).join(', ') || 'No Transfers sheet found (sheet name contains "transfer")';
-      alert('Workbook parsed — defaults populated. You can override inputs in the Inputs step.');
-    }catch(err){ console.error(err); alert('Failed to read workbook: '+err.message); }
+    // preview model used by review page
+    preview: { rows: [], accommodationRows: [], mealRows: [], summaryTotal: 0, subtotals: {} }
   };
-  reader.readAsArrayBuffer(f);
-});
 
-/* ---------- Utility: read a single cell value from a sheet ---------- */
-function readCell(sheet, a1){
-  if(!sheet) return null;
-  const c = sheet[a1];
-  if(!c) return null;
-  return c.v !== undefined ? c.v : (c.f !== undefined ? c.f : null);
-}
-
-/* ---------------- Parse lookups from workbook ---------------- */
-function findSheetNameLike(substr){
-  if(!appState.workbook) return null;
-  const n = appState.workbook.SheetNames.find(sn => sn.toLowerCase().includes(substr.toLowerCase()));
-  return n || null;
-}
-
-function parseLookupsFromWorkbook(){
-  appState.lookups = { sites: {}, transfers: { before: {}, after: {} }, meals: {}, accommodationSheet: [] };
-  if(!appState.workbook) return;
-
-  // Sites sheet: look for sheet name containing 'site'
-  const siteSheetName = findSheetNameLike('site') || findSheetNameLike('sites');
-  if(siteSheetName){
-    const s = appState.workbook.Sheets[siteSheetName];
-    const rows = XLSX.utils.sheet_to_json(s, {header:1, raw:true});
-    for(let r=1;r<rows.length;r++){
-      const row = rows[r];
-      const name = row[0]; if(!name) continue;
-      const before = parseNumber(row[1]) || null;
-      const after = parseNumber(row[2]) || null;
-      appState.lookups.sites[String(name).trim()] = { before, after };
-    }
+  // ---------- Helper utilities ----------
+  const $ = sel => document.querySelector(sel);
+  function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  // generic option fill
+  function optionRange(sel, from, to, withZero=false){
+    sel.innerHTML="";
+    if(withZero){ const z = document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
+    for(let i=from;i<=to;i++){ const o=document.createElement('option'); o.value=String(i); o.text=String(i); sel.appendChild(o); }
   }
-
-  // Transfers sheet(s)
-  const transfersSheetName = findSheetNameLike('transfer') || findSheetNameLike('transfers');
-  if(transfersSheetName){
-    const s = appState.workbook.Sheets[transfersSheetName];
-    const rows = XLSX.utils.sheet_to_json(s, {header:1, raw:true});
-    // header row rows[0] might contain multipliers — not required. Data from row1 onwards.
-    for(let r=1;r<rows.length;r++){
-      const row = rows[r] || [];
-      const nameBefore = row[0];
-      if(nameBefore){
-        const b2 = parseNumber(row[1]) || null;
-        const b3 = parseNumber(row[2]) || null;
-        const b4 = parseNumber(row[3]) || null;
-        appState.lookups.transfers.before[String(nameBefore).trim()] = [b2,b3,b4];
-      }
-      const nameAfter = row[4];
-      if(nameAfter){
-        // after columns often are 5..7
-        const a2 = parseNumber(row[5]) || null;
-        const a3 = parseNumber(row[6]) || null;
-        const a4 = parseNumber(row[7]) || null;
-        // if cell contains formula like "=B2*110%", try multiplier parse
-        // handle string formulas heuristically:
-        for(let j=5;j<=7;j++){
-          const cell = row[j];
-          if(cell !== undefined && cell !== null && typeof cell === 'string' && cell.startsWith('=')){
-            const m = parseMultiplierFromFormula(cell);
-            // fallback: if before value exists compute before * m
-            const beforeVal = appState.lookups.transfers.before[nameAfter] ? (appState.lookups.transfers.before[nameAfter][j-5] || 0) : 0;
-            if(m && beforeVal) {
-              if(j===5) appState.lookups.transfers.after[String(nameAfter).trim()] = appState.lookups.transfers.after[String(nameAfter).trim()] || [];
-              // computed below in assignment step
-            }
-          }
-        }
-        // store parsed or nulls
-        appState.lookups.transfers.after[String(nameAfter).trim()] = [a2,a3,a4];
-      }
-    }
+  function optionList(sel, arr, includeZero=true){
+    sel.innerHTML=""; if(includeZero){ const z=document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
+    arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); });
   }
-
-  // Meals sheet (optional)
-  const mealsSheetName = findSheetNameLike('meal') || findSheetNameLike('meals');
-  if(mealsSheetName){
-    const s = appState.workbook.Sheets[mealsSheetName];
-    const rows = XLSX.utils.sheet_to_json(s, {header:1, raw:true});
-    for(let r=1;r<rows.length;r++){
-      const row = rows[r];
-      const k = row[0]; if(!k) continue;
-      const price = parseNumber(row[1]) || null;
-      appState.lookups.meals[String(k).trim()] = price;
-    }
-  }
-
-  // Accommodation sheet optional parse
-  const accSheetName = findSheetNameLike('accommodation') || findSheetNameLike('accomodation') || findSheetNameLike('accom');
-  if(accSheetName){
-    const s = appState.workbook.Sheets[accSheetName];
-    appState.lookups.accommodationSheet = XLSX.utils.sheet_to_json(s, {header:1, raw:true});
-  }
-
-  console.log('Lookups parsed', appState.lookups);
-}
-
-function parseMultiplierFromFormula(formula){
-  try{
-    const matchPct = formula.match(/\*(\d+)%/);
-    if(matchPct) return Number(matchPct[1]) / 100;
-    const matchDec = formula.match(/\*([\d\.]+)/);
-    if(matchDec) return Number(matchDec[1]);
-  }catch(e){}
-  return null;
-}
-
-/* ---------------- Navigation wiring ---------------- */
-$('#toStep2').addEventListener('click', ()=>{
-  if(!appState.workbook){ alert('Please upload a workbook first.'); return; }
-  appState.quotationName = $('#quotationName').value.trim();
-  appState.flightTicket = $('#flightTicket').value;
-  // Preserve current appState lookups, show next
-  $('#step1').style.display = 'none'; $('#step2').style.display = 'block';
-  // prefill inputs from appState if previously set
-  $('#inputPax').value = appState.pax || $('#inputPax').value;
-  if(appState.quoteDate){
-    $('#inputDate').value = appState.quoteDate.toISOString().slice(0,10);
-  }
-  $('#inputXRate').value = appState.xRate || $('#inputXRate').value;
-});
-$('#backToStep1').addEventListener('click', ()=>{ $('#step2').style.display='none'; $('#step1').style.display='block'; });
-$('#backToInputs').addEventListener('click', ()=>{ $('#stepReview').style.display='none'; $('#step2').style.display='block'; });
-
-$('#resetBtn1').addEventListener('click', ()=>{ if(confirm('Reset page?')) location.reload(); });
-
-/* ---------------- When user clicks Show Review & Edit ---------------- */
-$('#toReview').addEventListener('click', ()=>{
-  // persist inputs into appState
-  appState.pax = parseInt($('#inputPax').value) || appState.pax || 2;
-  const dateVal = $('#inputDate').value;
-  appState.quoteDate = dateVal ? new Date(dateVal) : (appState.quoteDate || new Date());
-  appState.xRate = parseFloat($('#inputXRate').value) || appState.xRate || 47.7;
-
-  // collect site selections from Step1 checkboxes (if user used prior lists)
-  // (we also support using lookups.sites names instead)
-  const selected = [];
-  $$('[id^="previewSites"]').forEach(()=>{}); // placeholder: no extensive reliance on Step1 lists
-  // Also collect trips (we used static lists earlier; but to keep parity, we get checked items from those container IDs)
-  try {
-    appState.sitesSelected = []
-      .concat(getChecked('#cbPyramids')||[])
-      .concat(getChecked('#cbSakkara')||[])
-      .concat(getChecked('#cbCairoGiza')||[])
-      .concat(getChecked('#cbAlexBehera')||[])
-      .concat(getChecked('#cbKafrEtAl')||[])
-      .concat(getChecked('#cbLuxor')||[])
-      .concat(getChecked('#cbAswan')||[])
-      .concat(getChecked('#cbSharm')||[]);
-  } catch(e){ /* container may not exist — user didn't check any */ }
-
-  // trips
-  try {
-    appState.tripsSelected.CairoGiza = getChecked('#cbCairoGizaTrips') || [];
-    appState.tripsSelected.Sharm = getChecked('#cbSharmTrips') || [];
-    appState.tripsSelected.Luxor = getChecked('#cbLuxorTrips') || [];
-    appState.tripsSelected.Aswan = getChecked('#cbAswanTrips') || [];
-  }catch(e){}
-
-  // accommodation selections (persist)
-  appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
-  appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
-  appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
-  appState.accommodation["Sharm el Sheikh"].price  = $('#ddlPriceSharm').value;
-  appState.accommodation["Luxor"].nights = $('#ddlNightsLuxor').value;
-  appState.accommodation["Luxor"].price  = $('#ddlPriceLuxor').value;
-  appState.accommodation["Aswan"].nights = $('#ddlNightsAswan').value;
-  appState.accommodation["Aswan"].price  = $('#ddlPriceAswan').value;
-  appState.accommodation["Hurghada"].nights = $('#ddlNightsHurghada').value;
-  appState.accommodation["Hurghada"].price  = $('#ddlPriceHurghada').value;
-  appState.accommodation["Nile Cruise"].nights = $('#ddlNightsNileCruise').value;
-  appState.accommodation["Nile Cruise"].price  = $('#ddlPriceNileCruise').value;
-
-  // meals
-  mealTiers.forEach(t => appState.meals[t] = $('#ddlMeals'+t).value );
-
-  // counters
-  appState.cairoCounters.apt = $('#Cairoapt').value;
-  appState.cairoCounters.fd = $('#Cairofd').value;
-  appState.cairoCounters.night = $('#CairoNight').value;
-
-  // trips already collected above
-  computePreviewModel();
-  renderReviewPage();
-});
-
-/* -------------- Compute preview model (maps Excel formula behavior) ------------- */
-function computePreviewModel(){
-  appState.preview.rows = [];
-  appState.preview.accommodationRows = [];
-  appState.preview.mealRows = [];
-
-  const j2 = appState.quoteDate || new Date();
-  const people = appState.pax || 2;
-  const cutoffDate = new Date(2025,10,1); // Nov 1, 2025
-  const useAfter = (j2 >= cutoffDate);
-  const rate = appState.xRate || 47.7;
-
-  // Build F-list: Flight Ticket (if provided) then appState.sitesSelected (or if none, use lookups.sites keys)
-  const fList = [];
-  if(parseNumber(appState.flightTicket) !== null && appState.flightTicket !== ''){
-    fList.push({label:'Flight Ticket', value: parseNumber(appState.flightTicket)});
-  }
-  // if sitesSelected empty, fall back to lookups.sites keys
-  const sitesToUse = (appState.sitesSelected && appState.sitesSelected.length>0) ? appState.sitesSelected : Object.keys(appState.lookups.sites);
-  sitesToUse.forEach(s => fList.push({label:s, value:null}));
-
-  // Build H-list: transfers — counters + trips
-  const hList = [];
-  const aptCnt = parseNumber(appState.cairoCounters.apt) || 0;
-  for(let i=0;i<aptCnt;i++) hList.push('Cairo apt');
-  const fdCnt = parseNumber(appState.cairoCounters.fd) || 0;
-  for(let i=0;i<fdCnt;i++) hList.push('Cairo fd');
-  const nightCnt = parseNumber(appState.cairoCounters.night) || 0;
-  for(let i=0;i<nightCnt;i++) hList.push('Cairo night');
-
-  // add checked trips in order
-  (appState.tripsSelected.CairoGiza||[]).forEach(t=>hList.push(t));
-  (appState.tripsSelected.Sharm||[]).forEach(t=>hList.push(t));
-  (appState.tripsSelected.Luxor||[]).forEach(t=>hList.push(t));
-  (appState.tripsSelected.Aswan||[]).forEach(t=>hList.push(t));
-
-  // Build accommodation rows B10..B15
-  const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
-  for(let i=0;i<accomOrder.length;i++){
-    const place = accomOrder[i];
-    const rowIndex = 10 + i;
-    const nights = parseNumber(appState.accommodation[place].nights) || 0;
-    const price = parseNumber(appState.accommodation[place].price) || 0; // price in USD per instruction
-    const totalUS = (nights>0 && price>0) ? (nights * price) : "";
-    appState.preview.accommodationRows.push({rowIndex, place, nights, price, totalUS});
-  }
-
-  // Meals J/K
-  let mealRowIndex = 10;
-  mealTiers.forEach(tier=>{
-    const qty = parseNumber(appState.meals[tier]) || 0;
-    if(qty>0){
-      const totalEGP = qty * Number(tier);
-      const totalUSD = (totalEGP / rate);
-      appState.preview.mealRows.push({rowIndex: mealRowIndex, tier: Number(tier), qty, totalEGP, totalUSD});
-      mealRowIndex++;
-    }
-  });
-
-  // Build rows 10..40 baseline
-  const rows = [];
-  for(let r=10;r<=40;r++){
-    rows.push({ row: r, B: null, C: null, D: null, F: null, G_egp: null, G_usd:null, H:null, I_egp:null, I_usd:null, J:null, K_egp:null, K_usd:null });
-  }
-
-  // Fill accommodation B/C/D on rows 10..15
-  appState.preview.accommodationRows.forEach(ac=>{
-    const idx = ac.rowIndex - 10;
-    rows[idx].B = `${ac.nights>0 ? ac.nights + ' nights ' : ''}${ac.place}`;
-    rows[idx].C = ac.totalUS === "" ? "" : ac.totalUS; // C is USD (already)
-    rows[idx].D = ac.totalUS === "" ? "" : Math.round(ac.totalUS * 0.7 * 100)/100; // D = 70% of accom total
-  });
-
-  // Fill J/K from meals
-  appState.preview.mealRows.forEach(m=>{
-    const idx = m.rowIndex - 10;
-    rows[idx].J = `${m.qty} ${m.tier} meals`;
-    rows[idx].K_egp = m.totalEGP;
-    rows[idx].K_usd = m.totalUSD;
-  });
-
-  // Fill F/G: flight ticket + site names
-  for(let i=0;i<fList.length;i++){
-    const rowIndex = 10 + i;
-    if(rowIndex > 40) break;
-    const entry = fList[i];
-    rows[rowIndex - 10].F = entry.label;
-    if(entry.label === 'Flight Ticket'){
-      const val = entry.value !== null ? entry.value : (parseNumber(appState.flightTicket) || 0);
-      rows[rowIndex - 10].G_egp = null;
-      rows[rowIndex - 10].G_usd = val; // treat flight ticket as USD if numeric (user earlier stored numbers)
-    } else {
-      // site lookup
-      const lookup = appState.lookups.sites[entry.label];
-      if(lookup){
-        const egp = useAfter ? (lookup.after !== null ? lookup.after : lookup.before) : lookup.before;
-        // if site value missing null -> treat 0
-        rows[rowIndex - 10].G_egp = (egp===null ? null : egp);
-        rows[rowIndex - 10].G_usd = (egp===null ? null : (egp / rate));
-      } else {
-        rows[rowIndex - 10].G_egp = null;
-        rows[rowIndex - 10].G_usd = null;
-      }
-    }
-  }
-
-  // Fill H/I for transfers according to your exact Excel formula logic
-  for(let i=0; i<hList.length; i++){
-    const rowIndex = 10 + i;
-    if(rowIndex > 40) break;
-    const tName = hList[i];
-    rows[rowIndex - 10].H = tName;
-    if(!tName || tName === "") { rows[rowIndex - 10].I_egp = null; rows[rowIndex - 10].I_usd = null; continue;}
-    // choose lookup set based on date
-    const lookupSet = (useAfter ? appState.lookups.transfers.after : appState.lookups.transfers.before);
-    const tr = lookupSet[tName] || appState.lookups.transfers.before[tName] || appState.lookups.transfers.after[tName];
-    if(tr){
-      // tr is array [col2,col3,col4] where col2 is for <=7, col3 <=15, col4 >15
-      let chosen = null;
-      if(people <= 7) chosen = tr[0];
-      else if(people <= 15) chosen = tr[1];
-      else chosen = tr[2];
-      // compute per person: divide by pax
-      const egp = (chosen === null ? null : chosen);
-      rows[rowIndex - 10].I_egp = (egp===null ? null : (egp)); // keep stored as egp for subtotal then we divide by pax later
-      rows[rowIndex - 10].I_usd = (egp===null ? null : ( (egp / (people || 1)) / rate ));
-    } else {
-      rows[rowIndex - 10].I_egp = null; rows[rowIndex - 10].I_usd = null;
-    }
-  }
-
-  // Ensure D computed for any row with C numeric (if someone edited C) - but at compute stage use accommodation rows only
-  for(const r of rows){
-    if(parseNumber(r.C)!==null) r.D = Math.round((parseNumber(r.C) * 0.7) * 100)/100;
-  }
-
-  appState.preview.rows = rows;
-
-  // compute subtotals:
-  let subtotalAccommodationUSD = 0;
-  let subtotalSitesUSD = 0;
-  let subtotalTransfersUSD = 0;
-  let subtotalMealsUSD = 0;
-
-  // Accommodation: sum C for rows 10..15
-  appState.preview.accommodationRows.forEach(a=>{
-    const v = parseNumber(a.totalUS);
-    if(v !== null) subtotalAccommodationUSD += v;
-  });
-
-  // Sites: sum G_usd for rows that have G_usd
-  appState.preview.rows.forEach(r=>{
-    const gu = parseNumber(r.G_usd);
-    if(gu !== null) subtotalSitesUSD += gu;
-  });
-
-  // Transfers: sum I_usd (we used per-row division already when computing I_usd)
-  appState.preview.rows.forEach(r=>{
-    const iu = parseNumber(r.I_usd);
-    if(iu !== null) subtotalTransfersUSD += iu;
-  });
-
-  // Meals: sum K_usd
-  appState.preview.rows.forEach(r=>{
-    const ku = parseNumber(r.K_usd);
-    if(ku !== null) subtotalMealsUSD += ku;
-  });
-
-  appState.preview.summary = {
-    accommodationUSD: Math.round(subtotalAccommodationUSD*100)/100,
-    sitesUSD: Math.round(subtotalSitesUSD*100)/100,
-    transfersUSD: Math.round(subtotalTransfersUSD*100)/100,
-    mealsUSD: Math.round(subtotalMealsUSD*100)/100,
-    grandTotalUSD: Math.round((subtotalAccommodationUSD + subtotalSitesUSD + subtotalTransfersUSD + subtotalMealsUSD)*100)/100,
-    singleSupplementUSD: Math.round((subtotalAccommodationUSD * 0.7)*100)/100
-  };
-}
-
-/* ---------------- Render Review page with editable inputs -------------- */
-function renderReviewPage(){
-  $('#reviewTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
-  const rows = appState.preview.rows;
-  const detailDiv = $('#detailTables'); detailDiv.innerHTML = '';
-
-  // Accommodation table (B/C/D) rows 10..15
-  const accom = appState.preview.accommodationRows;
-  const accomTbl = document.createElement('div');
-  accomTbl.innerHTML = `<h4 style="margin:0 0 8px">Accommodation (Rows 10..15)</h4>`;
-  const t1 = document.createElement('table');
-  t1.innerHTML = `<thead><tr><th>Row</th><th>Place / Nights</th><th class="numCell">Total (USD) — editable</th><th class="numCell">70% (Single Suppl.)</th></tr></thead>`;
-  const b1 = document.createElement('tbody');
-  accom.forEach(a=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${a.rowIndex}</td>
-      <td>${escapeHtml(a.place)} <div class="muted small">nights: ${a.nights} @ ${a.price} USD</div></td>
-      <td class="numCell"><input class="editable" data-path="accom:${a.place}:${a.rowIndex}" data-row="${a.rowIndex}" value="${a.totalUS==='' ? '' : a.totalUS}"></td>
-      <td class="numCell">${fmt(a.totalUS!=='' ? Math.round(a.totalUS*0.7*100)/100 : '')}</td>`;
-    b1.appendChild(tr);
-  });
-  t1.appendChild(b1); accomTbl.appendChild(t1); detailDiv.appendChild(accomTbl);
-
-  // Sites/Flights table (F/G)
-  const fTblDiv = document.createElement('div');
-  fTblDiv.innerHTML = `<h4 style="margin:10px 0 6px">Sites & Flight Tickets (Rows 10..40)</h4>`;
-  const t2 = document.createElement('table');
-  t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (USD) — editable</th></tr></thead>`;
-  const b2 = document.createElement('tbody');
-  rows.forEach(r=>{
-    if(r.F !== null && r.F !== ""){
-      // Flight ticket G_usd may be number or site's G_usd
-      const value = (parseNumber(r.G_usd) !== null) ? (r.G_usd) : '';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.row}</td>
-        <td>${escapeHtml(r.F)}</td>
-        <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${value}"></td>`;
-      b2.appendChild(tr);
-    }
-  });
-  t2.appendChild(b2); fTblDiv.appendChild(t2); detailDiv.appendChild(fTblDiv);
-
-  // Transfers table (H / I)
-  const trDiv = document.createElement('div');
-  trDiv.innerHTML = `<h4 style="margin:10px 0 6px">Transfers (Rows 10..40)</h4>`;
-  const t3 = document.createElement('table');
-  t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price per pax (USD) — editable</th></tr></thead>`;
-  const b3 = document.createElement('tbody');
-  rows.forEach(r=>{
-    if(r.H !== null && r.H !== ""){
-      const value = (parseNumber(r.I_usd) !== null) ? r.I_usd : '';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.H)}</td><td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${value}"></td>`;
-      b3.appendChild(tr);
-    }
-  });
-  t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
-
-  // Meals table (J / K)
-  const mealDiv = document.createElement('div');
-  mealDiv.innerHTML = `<h4 style="margin:10px 0 6px">Meals (Rows 10..40)</h4>`;
-  const t4 = document.createElement('table');
-  t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (USD) — editable</th></tr></thead>`;
-  const b4 = document.createElement('tbody');
-  rows.forEach(r=>{
-    if(r.J !== null && r.J !== ""){
-      const val = (parseNumber(r.K_usd) !== null) ? r.K_usd : '';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${val}"></td>`;
-      b4.appendChild(tr);
-    }
-  });
-  t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
-
-  // Render summary (right-side)
-  const s = appState.preview.summary;
-  $('#summaryPanel').textContent = `Accommodation: $${fmt(s.accommodationUSD)} · Sites: $${fmt(s.sitesUSD)} · Transfers (per pax): $${fmt(s.transfersUSD)} · Meals: $${fmt(s.mealsUSD)} · Grand: $${fmt(s.grandTotalUSD)}`;
-  // Show grand and single supplement separately under panel
-  const extra = document.createElement('div'); extra.style.marginTop='12px';
-  extra.innerHTML = `
-    <table>
-      <tr><td class="muted">Accommodation subtotal (USD)</td><td class="numCell">${fmt(s.accommodationUSD)}</td></tr>
-      <tr><td class="muted">Sites subtotal (USD)</td><td class="numCell">${fmt(s.sitesUSD)}</td></tr>
-      <tr><td class="muted">Transfers subtotal per pax (USD)</td><td class="numCell">${fmt(s.transfersUSD)}</td></tr>
-      <tr><td class="muted">Meals subtotal (USD)</td><td class="numCell">${fmt(s.mealsUSD)}</td></tr>
-      <tr class="summary"><td style="font-weight:800">Grand Total (USD)</td><td class="numCell">${fmt(s.grandTotalUSD)}</td></tr>
-      <tr class="summary"><td>Single Supplement (70% of Accommodation)</td><td class="numCell">${fmt(s.singleSupplementUSD)}</td></tr>
-    </table>`;
-  $('#detailRight').querySelector('#summaryPanel').insertAdjacentElement('afterend', extra);
-
-  // Wire editable inputs
-  Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
-    inp.addEventListener('input', ev=>{
-      const p = inp.dataset.path;
-      const valRaw = inp.value;
-      const valNum = parseNumber(valRaw);
-      // Update preview model live
-      if(p.startsWith('F:')) { // Sites/Flights — treat as USD override
-        const rowNum = Number(inp.dataset.row);
-        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-        if(rowObj){ rowObj.G_usd = (valNum===null ? null : valNum); rowObj.G_egp = (valNum===null ? null : (valNum * appState.xRate)); }
-      } else if(p.startsWith('H:')) { // Transfer per pax USD override
-        const rowNum = Number(inp.dataset.row);
-        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-        if(rowObj){ rowObj.I_usd = (valNum===null ? null : valNum); rowObj.I_egp = (valNum===null ? null : (valNum * appState.pax * appState.xRate)); /* revert to egp total */ }
-      } else if(p.startsWith('J:')) { // meal total USD override
-        const rowNum = Number(inp.dataset.row);
-        const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-        if(rowObj){ rowObj.K_usd = (valNum===null ? null : valNum); rowObj.K_egp = (valNum===null ? null : (valNum * appState.xRate)); }
-      } else if(p.startsWith('accom:')) {
-        // pattern: accom:PLACE:rowIndex
-        const parts = p.split(':');
-        const place = parts[1];
-        const rowIndex = Number(parts[2]);
-        const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
-        if(ac){
-          const newTotal = valNum;
-          ac.totalUS = (newTotal===null ? "" : newTotal);
-          // update main rows structure as well
-          const rowObj = appState.preview.rows.find(x=>x.row===rowIndex);
-          if(rowObj){
-            rowObj.C = (newTotal===null ? "" : newTotal);
-            rowObj.D = (newTotal===null ? "" : Math.round(newTotal*0.7*100)/100);
-          }
-        }
-      }
-      recomputeSummaryAndRender();
+  function renderChecks(container, items){
+    const el=$(container); el.innerHTML="";
+    items.forEach(txt=>{
+      const id = container.slice(1) + "_" + txt.replace(/\W+/g,'_');
+      const lbl=document.createElement('label');
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.value=txt; cb.id=id;
+      const span=document.createElement('span'); span.textContent=" "+txt;
+      lbl.appendChild(cb); lbl.appendChild(span);
+      el.appendChild(lbl);
     });
-  });
+  }
+  function getChecked(container){ return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value); }
+  function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const s=String(v).toString().replace(/,/g,'').trim(); if(s==="") return null; const n=Number(s); return Number.isFinite(n)?n:null; }
+  function fmt(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
+  function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // show review
-  $('#step2').style.display='none';
-  $('#stepReview').style.display='block';
-}
+  // ---------- Static lists for checkboxes (same as original) ----------
+  const lists = {
+    Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
+    Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
+    CairoGiza: ["Grand Egyptian Museum","Citadel","Egyptian Museum","Civilization Museum","Egyptian Museum (Guide)","Islamic Art Museum","Coptic Museum","Royal Carriage Museum","Gayer Anderson Museum","Senosert Obelisk","Baron Palace","Moez Street","Mohammed Ali Manial Palace","Nilometer","Rifa'i Mosque","Suhaymi House","Mohamed Ali Palace"],
+    AlexBehera: ["Qaitbay","Montazah","Alexandria Library","Kom al Shuqafa","Kom al Dekka","Serapeum Alexandria","Alexandria Museum","Royal Jewellery Museum","Graeco-Roman Museum","Rashid City"],
+    KafrEtAl: ["Abydoss","Dandara","Kafr El Sheikh Museum","San Al Hajar","Malwi Museum","Tona El Gabal","Bani Hassan Cemetery","Tal Al Omrana","Royal Cemetery Al Omrana","Meret Amon/Ramses II Statue"],
+    Luxor: ["Karnak","Luxor Museum","Hot Air Balloon","Luxor Temple","Valley of Kings","Seti I Cemetery","Ay Cemetery","Hatshepsut","Der Al Madina","Pashtu Cemetery","Ra'muza Cemetery","Alramseum Temple","Abdel Karna","Carter House","Menena Nakht","Seti I Temple","Osraht - Khensu","ElAssassif","Esna","Tutankhamun Cemetery","Ramses VI","Habo","Valley of Queens","Nefertari","Khokha","Shuroy","Qurnet Murai","Abdel Karna Necropolis","Mummification","Mut (Karnak)"],
+    Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
+    Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
+    Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
 
-/* -------------- recompute summary from preview rows when edits happen -------------- */
-function recomputeSummaryAndRender(){
-  let acc=0, sites=0, trans=0, meals=0;
-  // accommodation: sum preview.accommodationRows.totalUS
-  appState.preview.accommodationRows.forEach(a=>{
-    const v = parseNumber(a.totalUS);
-    if(v!==null) acc += v;
-  });
-  // sites
-  appState.preview.rows.forEach(r=>{ const v = parseNumber(r.G_usd); if(v!==null) sites += v; });
-  // transfers per pax already in I_usd when computed/edited
-  appState.preview.rows.forEach(r=>{ const v = parseNumber(r.I_usd); if(v!==null) trans += v; });
-  // meals
-  appState.preview.rows.forEach(r=>{ const v = parseNumber(r.K_usd); if(v!==null) meals += v; });
-
-  appState.preview.summary = {
-    accommodationUSD: Math.round(acc*100)/100,
-    sitesUSD: Math.round(sites*100)/100,
-    transfersUSD: Math.round(trans*100)/100,
-    mealsUSD: Math.round(meals*100)/100,
-    grandTotalUSD: Math.round((acc + sites + trans + meals)*100)/100,
-    singleSupplementUSD: Math.round((acc * 0.7)*100)/100
+    CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
+    SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
+    LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
+    AswanTrips: ["Aswan Station","Aswan apt","Aswan fd","Nubian Museum","Abu Simbel","Nubian Village","Nubian Village Visit"]
   };
 
-  // update summary display
-  const s = appState.preview.summary;
-  $('#summaryPanel').textContent = `Accommodation: $${fmt(s.accommodationUSD)} · Sites: $${fmt(s.sitesUSD)} · Transfers (per pax): $${fmt(s.transfersUSD)} · Meals: $${fmt(s.mealsUSD)} · Grand: $${fmt(s.grandTotalUSD)}`;
+  // render checkboxes
+  renderChecks('#cbPyramids', lists.Pyramids);
+  renderChecks('#cbSakkara', lists.Sakkara);
+  renderChecks('#cbCairoGiza', lists.CairoGiza);
+  renderChecks('#cbAlexBehera', lists.AlexBehera);
+  renderChecks('#cbKafrEtAl', lists.KafrEtAl);
+  renderChecks('#cbLuxor', lists.Luxor);
+  renderChecks('#cbAswan', lists.Aswan);
+  renderChecks('#cbSharm', lists.Sharm);
+  renderChecks('#cbMosques', lists.Mosques);
+  renderChecks('#cbCairoGizaTrips', lists.CairoGizaTrips);
+  renderChecks('#cbSharmTrips', lists.SharmTrips);
+  renderChecks('#cbLuxorTrips', lists.LuxorTrips);
+  renderChecks('#cbAswanTrips', lists.AswanTrips);
 
-  // update the extra table below summary panel (rebuild simple)
-  const existing = $('#detailRight table');
-  if(existing) existing.remove();
-  const extra = document.createElement('div'); extra.style.marginTop='12px';
-  extra.innerHTML = `
-    <table>
-      <tr><td class="muted">Accommodation subtotal (USD)</td><td class="numCell">${fmt(s.accommodationUSD)}</td></tr>
-      <tr><td class="muted">Sites subtotal (USD)</td><td class="numCell">${fmt(s.sitesUSD)}</td></tr>
-      <tr><td class="muted">Transfers subtotal per pax (USD)</td><td class="numCell">${fmt(s.transfersUSD)}</td></tr>
-      <tr><td class="muted">Meals subtotal (USD)</td><td class="numCell">${fmt(s.mealsUSD)}</td></tr>
-      <tr class="summary"><td style="font-weight:800">Grand Total (USD)</td><td class="numCell">${fmt(s.grandTotalUSD)}</td></tr>
-      <tr class="summary"><td>Single Supplement (70% of Accommodation)</td><td class="numCell">${fmt(s.singleSupplementUSD)}</td></tr>
-    </table>`;
-  $('#detailRight').appendChild(extra);
-}
+  // populate nights dropdowns and price dropdowns (local currency)
+  const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
+  nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
+  const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
+  const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
+  function fillPrice(selId, arr){ const el=document.getElementById(selId); el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
+  fillPrice('ddlPriceCairoGiza', price30to150);
+  fillPrice('ddlPriceSharm', price30to150);
+  fillPrice('ddlPriceLuxor', price30to150);
+  fillPrice('ddlPriceAswan', price30to150);
+  fillPrice('ddlPriceHurghada', price30to150);
+  fillPrice('ddlPriceNileCruise', priceNileCruise);
 
-/* ------------- Apply edits to main state (accommodation price update logic) ------------- */
-$('#applyEdits').addEventListener('click', ()=>{
-  // For each accommodation preview row, if totalUS present and nights > 0 compute new price and push to appState.accommodation
-  let changes = 0;
-  appState.preview.accommodationRows.forEach(ac=>{
-    const rowObj = ac;
-    const newTotal = parseNumber(ac.totalUS);
-    if(newTotal !== null && ac.nights > 0){
-      const newPrice = Math.round((newTotal / ac.nights) * 100)/100;
-      if(String(appState.accommodation[ac.place].price) !== String(newPrice)){
-        appState.accommodation[ac.place].price = String(newPrice);
+  // meals dropdowns
+  const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
+  const mealsWrap = document.getElementById('mealsSelects');
+  mealTiers.forEach(tier=>{
+    const row=document.createElement('div'); row.className='row';
+    const lbl=document.createElement('label'); lbl.textContent=`${tier} Meals`;
+    const sel=document.createElement('select'); sel.id='ddlMeals'+tier;
+    optionRange(sel, 0, 6, false);
+    row.appendChild(lbl); row.appendChild(sel);
+    mealsWrap.appendChild(row);
+  });
+
+  // Cairo counters
+  optionRange(document.getElementById('Cairoapt'), 0, 5, false);
+  optionRange(document.getElementById('Cairofd'), 0, 5, false);
+  optionRange(document.getElementById('CairoNight'), 0, 5, false);
+
+  // ---------- Upload Excel and parse lookups ----------
+  $('#upload').addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload = evt=>{
+      const data=new Uint8Array(evt.target.result);
+      try {
+        appState.workbook = XLSX.read(data, { type:'array' });
+        // pick first sheet as primary (Quotation sheet) if needed
+        appState.sheetName = appState.workbook.SheetNames[0];
+        parseLookupsFromWorkbook();
+        // populate UI with E3 / J2 default values if available
+        const workbookPeople = readCellA1(appState.sheetName, 'E3');
+        if(parseNumber(workbookPeople) !== null) $('#numPax').value = parseNumber(workbookPeople);
+        const workbookDate = readCellA1(appState.sheetName, 'J2');
+        if(workbookDate){
+          let d;
+          if(workbookDate instanceof Date) d = workbookDate.toISOString().slice(0,10);
+          else if(typeof workbookDate === 'number'){ const parsed = XLSX.SSF.parse_date_code(workbookDate); if(parsed) d = new Date(parsed.y,parsed.m-1,parsed.d).toISOString().slice(0,10); }
+          else { const dt = new Date(workbookDate); if(!isNaN(dt)) d = dt.toISOString().slice(0,10); }
+          if(d) $('#quoteDate').value = d;
+        }
+        alert('Excel uploaded and lookups parsed successfully.');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to read Excel. Ensure it is a valid .xlsx');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // find sheet by name fuzzy
+  function findSheetNameLike(sub){
+    if(!appState.workbook) return null;
+    const name = appState.workbook.SheetNames.find(n => n.toLowerCase().includes(sub.toLowerCase()));
+    return name || null;
+  }
+
+  function parseLookupsFromWorkbook(){
+    // reset
+    appState.lookups = { sites: {}, transfers: {} };
+
+    // Sites sheet: look for name containing 'site'
+    const sitesSheetName = findSheetNameLike('site') || findSheetNameLike('sites');
+    if(sitesSheetName){
+      const sht = appState.workbook.Sheets[sitesSheetName];
+      const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
+      for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        if(!row || !row[0]) continue;
+        const name = String(row[0]).trim();
+        const before = parseNumber(row[1]) || 0; // column B
+        const after  = parseNumber(row[2]) || null; // column C
+        appState.lookups.sites[name] = { before, after };
+      }
+    } else { console.warn('Sites sheet not found'); }
+
+    // Transfers sheet: find 'transfer' sheet
+    const transfersSheetName = findSheetNameLike('transfer') || findSheetNameLike('transfers');
+    if(transfersSheetName){
+      const sht = appState.workbook.Sheets[transfersSheetName];
+      const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
+      // header at row 0; data rows start at 1
+      for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        if(!row) continue;
+        // before: cols A-D -> index 0..3 => name at 0, before B/C/D at 1..3
+        const nameBefore = row[0];
+        const nameAfter  = row[4]; // maybe column E
+        const keyName = (nameBefore || nameAfter);
+        if(!keyName) continue;
+        const name = String(keyName).trim();
+        const beforeArr = [ parseNumber(row[1])||0, parseNumber(row[2])||0, parseNumber(row[3])||0 ];
+        const afterArr  = [ parseNumber(row[5])||null, parseNumber(row[6])||null, parseNumber(row[7])||null ];
+        // if after arr nulls, try to compute multiplier if formulas are present in sheet raw (sheet_to_json raw might reveal formula strings). For now take numeric where present.
+        appState.lookups.transfers[name] = { before: beforeArr, after: afterArr };
+      }
+    } else { console.warn('Transfers sheet not found'); }
+    console.log('Lookups loaded:', appState.lookups);
+  }
+
+  function readCellA1(sheetName, a1){
+    if(!appState.workbook || !sheetName) return null;
+    const sht = appState.workbook.Sheets[sheetName];
+    if(!sht) return null;
+    const cell = sht[a1];
+    if(!cell) return null;
+    return cell.v !== undefined ? cell.v : null;
+  }
+
+  // ---------- Navigation (Next/Back) ----------
+  $('#toStep2').addEventListener('click', ()=>{
+    if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
+    appState.quotationName = $('#quotationName').value.trim();
+    if(!appState.quotationName){ alert('Please provide a Quotation Name.'); return; }
+    appState.flightTicket = $('#flightTicket').value.trim();
+    // collect sites from checkboxes
+    appState.sites = []
+      .concat(getChecked('#cbPyramids'))
+      .concat(getChecked('#cbSakkara'))
+      .concat(getChecked('#cbCairoGiza'))
+      .concat(getChecked('#cbAlexBehera'))
+      .concat(getChecked('#cbKafrEtAl'))
+      .concat(getChecked('#cbLuxor'))
+      .concat(getChecked('#cbAswan'))
+      .concat(getChecked('#cbSharm'));
+    showStep(2);
+  });
+  $('#back1').addEventListener('click', ()=> showStep(1));
+  $('#toStep3').addEventListener('click', ()=>{
+    // persist accommodation selects
+    appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
+    appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
+    appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
+    appState.accommodation["Sharm el Sheikh"].price  = $('#ddlPriceSharm').value;
+    appState.accommodation["Luxor"].nights = $('#ddlNightsLuxor').value;
+    appState.accommodation["Luxor"].price  = $('#ddlPriceLuxor').value;
+    appState.accommodation["Aswan"].nights = $('#ddlNightsAswan').value;
+    appState.accommodation["Aswan"].price  = $('#ddlPriceAswan').value;
+    appState.accommodation["Hurghada"].nights = $('#ddlNightsHurghada').value;
+    appState.accommodation["Hurghada"].price  = $('#ddlPriceHurghada').value;
+    appState.accommodation["Nile Cruise"].nights = $('#ddlNightsNileCruise').value;
+    appState.accommodation["Nile Cruise"].price  = $('#ddlPriceNileCruise').value;
+    showStep(3);
+  });
+  $('#back2').addEventListener('click', ()=> showStep(2));
+  $('#toStep4').addEventListener('click', ()=>{
+    appState.guideTicket = $('#TextBoxGuideTicket').value.trim();
+    appState.guideAccomodation = $('#TextBoxGuideAccomodation').value.trim();
+    mealTiers.forEach(tier => appState.meals[tier] = $('#ddlMeals'+tier).value);
+    showStep(4);
+  });
+  $('#back3').addEventListener('click', ()=> showStep(3));
+  $('#resetBtn1').addEventListener('click', ()=> { if(confirm('Clear all current inputs?')) location.reload(); });
+
+  // ---------- Keep original Excel-writing functions (unchanged) ----------
+  function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
+  function set(ws, addr, value){
+    ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
+  }
+  function ensureRef(ws, minA1, maxA1){
+    const dec = r=>XLSX.utils.decode_cell(r);
+    const enc = o=>XLSX.utils.encode_cell(o);
+    const min = dec(minA1), max = dec(maxA1);
+    const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
+    const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
+    const e = { c: Math.max(cur.e.c, max.c), r: Math.max(cur.e.r, max.r) };
+    ws['!ref'] = XLSX.utils.encode_range({s,e});
+  }
+
+  function writeExcelAndDownload(){
+    if(!appState.workbook){ alert('No workbook loaded.'); return; }
+    const sheetName = appState.workbook.SheetNames[0];
+    const ws = appState.workbook.Sheets[sheetName];
+
+    // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
+    let rowF = 10;
+    const ft = n(appState.flightTicket);
+    if(ft !== null){
+      set(ws, `F${rowF}`, "Flight Ticket");
+      set(ws, `G${rowF}`, ft);
+      rowF++;
+    }
+    for(const item of appState.sites){
+      if(rowF > 40) break;
+      set(ws, `F${rowF}`, item);
+      rowF++;
+    }
+
+    // --- Guide Extras (L/M)
+    const guideTicket = n(appState.guideTicket);
+    if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+    const guideAcc = n(appState.guideAccomodation);
+    if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+
+    // --- Trips Column H, rows 10..40
+    let rowH = 10;
+    const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+    const cntApt = n(appState.cairoCounters.apt) || 0;
+    for(let i=0;i<cntApt;i++) addH("Cairo apt");
+    const cntFd = n(appState.cairoCounters.fd) || 0;
+    for(let i=0;i<cntFd;i++) addH("Cairo fd");
+    const cntNight = n(appState.cairoCounters.night) || 0;
+    for(let i=0;i<cntNight;i++) addH("Cairo night");
+
+    // Then each checked item once, in order:
+    [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+
+    // --- Accommodation (FillAccommodationData clone)
+    function fillAccommodation(place, nights, price, rowIndex){
+      const ni = n(nights) || 0;
+      const pi = n(price) || 0;
+      if(ni>0 && pi>0){
+        set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
+        set(ws, `C${rowIndex}`, ni * pi);
+      } else {
+        set(ws, `B${rowIndex}`, "");
+        set(ws, `C${rowIndex}`, "");
+      }
+    }
+    fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
+    fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
+    fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
+    fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
+    fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
+    fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
+
+    // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20
+    let currentRowJ = 10, currentRowK = 10;
+    function writeMeals(mealCategory, mealsQuantityStr){
+      const q = n(mealsQuantityStr);
+      if(q && q>0){
+        set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
+        set(ws, `K${currentRowK}`, q * n(mealCategory));
+        currentRowJ++; currentRowK++;
+      }
+    }
+    mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
+    for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K
+
+    ensureRef(ws, 'A1', 'M40');
+
+    const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+    const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ---------- Compute preview model (replicates Excel formulas precisely) ----------
+  function computePreviewModel(){
+    // reset
+    appState.preview.rows = [];
+    appState.preview.accommodationRows = [];
+    appState.preview.mealRows = [];
+
+    // read controls
+    const uiPax = parseNumber($('#numPax').value);
+    const workbookE3 = readCellA1(appState.sheetName, 'E3');
+    const pax = uiPax || parseNumber(workbookE3) || 2;
+
+    // quote date priority: UI input > workbook J2 > today
+    let qDate = null;
+    const uiDateVal = $('#quoteDate').value;
+    if(uiDateVal) qDate = new Date(uiDateVal);
+    else {
+      const wbJ2 = readCellA1(appState.sheetName, 'J2');
+      if(wbJ2 instanceof Date) qDate = wbJ2;
+      else if(typeof wbJ2 === 'number'){ const parsed = XLSX.SSF.parse_date_code(wbJ2); if(parsed) qDate = new Date(parsed.y, parsed.m-1, parsed.d); }
+      else if(typeof wbJ2 === 'string'){ const d = new Date(wbJ2); if(!isNaN(d)) qDate = d; }
+    }
+    if(!qDate) qDate = new Date();
+
+    // exchange rate input default fallback to 47.7
+    const exRate = parseNumber($('#exchangeRate').value) || 47.7;
+
+    const thresholdDate = new Date(2025,10,1); // nov 1 2025
+
+    // Accommodation rows B10..B15
+    const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
+    for(let i=0;i<accomOrder.length;i++){
+      const place = accomOrder[i];
+      const rowIndex = 10 + i;
+      const nights = parseNumber(appState.accommodation[place].nights) || 0;
+      const priceLocal = parseNumber(appState.accommodation[place].price) || 0; // local currency
+      const totalLocal = nights>0 && priceLocal>0 ? nights * priceLocal : "";
+      // convert to USD:
+      const totalUSD = (totalLocal==="" ? "" : Math.round((totalLocal / exRate) * 100)/100);
+      appState.preview.accommodationRows.push({ rowIndex, place, nights, priceLocal, totalLocal, totalUSD });
+    }
+
+    // Meals J/K
+    let mealRowIndex = 10;
+    for(const tier of mealTiers){
+      const qty = parseNumber(appState.meals[tier]) || 0;
+      if(qty>0){
+        const totalLocal = qty * Number(tier);
+        const totalUSD = Math.round((totalLocal / exRate) * 100)/100;
+        appState.preview.mealRows.push({ rowIndex: mealRowIndex, tier: Number(tier), qty, totalLocal, totalUSD });
+        mealRowIndex++;
+      }
+    }
+
+    // Build rows 10..40 base empty
+    const rows = [];
+    for(let r=10;r<=40;r++){
+      rows.push({ row:r, B:"", C_local:"", C_usd:"", D_usd:"", F:"", G_local:"", G_usd:"", H:"", I_local:"", I_usd:"", J:"", K_local:"", K_usd:"" });
+    }
+
+    // Fill B/C from accomRows (C_local), and D_usd = 70% of C_usd
+    for(const a of appState.preview.accommodationRows){
+      const idx = a.rowIndex - 10;
+      rows[idx].B = `${a.nights>0 ? a.nights + " nights " : ""}${a.place}`;
+      rows[idx].C_local = a.totalLocal === "" ? "" : a.totalLocal;
+      rows[idx].C_usd = a.totalUSD === "" ? "" : a.totalUSD;
+      rows[idx].D_usd = (a.totalUSD!=="" ? Math.round(a.totalUSD * 0.7 * 100)/100 : "");
+    }
+
+    // Fill J/K from mealRows
+    for(const m of appState.preview.mealRows){
+      const idx = m.rowIndex - 10;
+      rows[idx].J = `${m.qty} ${m.tier} meals`;
+      rows[idx].K_local = m.totalLocal;
+      rows[idx].K_usd = m.totalUSD;
+    }
+
+    // Fill F/G list: flight ticket then sites in order
+    const fList = [];
+    const ft = parseNumber(appState.flightTicket);
+    if(ft !== null && appState.flightTicket !== "") fList.push({ label: 'Flight Ticket', value: ft });
+    for(const s of appState.sites) fList.push({ label: s, value: null });
+
+    for(let i=0;i<fList.length;i++){
+      const rowIndex = 10 + i;
+      if(rowIndex>40) break;
+      const entry = fList[i];
+      rows[rowIndex - 10].F = entry.label;
+      if(entry.label === 'Flight Ticket'){
+        rows[rowIndex - 10].G_local = entry.value !== null ? entry.value : "";
+        // treat flight ticket number as numeric (not currency) — but we will show as USD numeric (same number)
+        rows[rowIndex - 10].G_usd = entry.value !== null ? Number(entry.value) : "";
+      } else {
+        // lookup site price
+        const sname = entry.label;
+        const sl = appState.lookups.sites[sname];
+        if(sl){
+          const useAfter = (qDate >= thresholdDate);
+          const priceLocal = useAfter ? (sl.after !== null ? sl.after : sl.before) : sl.before;
+          rows[rowIndex - 10].G_local = priceLocal === undefined ? "" : priceLocal;
+          rows[rowIndex - 10].G_usd = (priceLocal === "" || priceLocal === null || priceLocal === undefined) ? "" : Math.round((priceLocal / exRate) * 100)/100;
+        } else {
+          rows[rowIndex - 10].G_local = "";
+          rows[rowIndex - 10].G_usd = "";
+        }
+      }
+    }
+
+    // Fill H/I transfers: build transfer list from counters and checked trips
+    const hList = [];
+    const cntApt = parseNumber(appState.cairoCounters.apt) || 0;
+    for(let i=0;i<cntApt;i++) hList.push('Cairo apt');
+    const cntFd = parseNumber(appState.cairoCounters.fd) || 0;
+    for(let i=0;i<cntFd;i++) hList.push('Cairo fd');
+    const cntNight = parseNumber(appState.cairoCounters.night) || 0;
+    for(let i=0;i<cntNight;i++) hList.push('Cairo night');
+
+    // add trips checked
+    hList.push(...(appState.trips.CairoGiza||[]));
+    hList.push(...(appState.trips.Sharm||[]));
+    hList.push(...(appState.trips.Luxor||[]));
+    hList.push(...(appState.trips.Aswan||[]));
+
+    for(let i=0;i<hList.length;i++){
+      const rowIndex = 10 + i;
+      if(rowIndex>40) break;
+      const name = hList[i];
+      rows[rowIndex - 10].H = name;
+      if(!name){ rows[rowIndex - 10].I_local = ""; rows[rowIndex - 10].I_usd = ""; continue; }
+      const tr = appState.lookups.transfers[name];
+      if(!tr){ rows[rowIndex - 10].I_local = ""; rows[rowIndex - 10].I_usd = ""; continue; }
+      const useAfter = (qDate >= thresholdDate);
+      const arr = useAfter ? (tr.after.map(v=>v===null?0:v)) : tr.before;
+      // pick column by pax: <=7 -> idx 0, <=15 -> idx1 else idx2
+      const idx = (pax <= 7 ? 0 : (pax <= 15 ? 1 : 2));
+      const localValue = arr[idx] || 0;
+      // transfers subtotal should be divided by number of pax (per person)
+      const perPersonLocal = (pax>0 ? (localValue / pax) : 0);
+      rows[rowIndex - 10].I_local = Math.round(perPersonLocal * 100)/100;
+      rows[rowIndex - 10].I_usd = Math.round((perPersonLocal / exRate) * 100)/100;
+    }
+
+    // Guide extras L/M if present in state: put them into preview low rows (e.g., L12/M12 => row 12)
+    const guideTicketVal = parseNumber(appState.guideTicket);
+    if(guideTicketVal !== null){ const idx = 12 - 10; rows[idx].B = rows[idx].B || ""; rows[idx].G_local = rows[idx].G_local || ""; rows[idx].L = "Guide Ticket"; rows[idx].M_local = guideTicketVal; rows[idx].M_usd = Math.round((guideTicketVal / exRate)*100)/100; }
+
+    const guideAccVal = parseNumber(appState.guideAccomodation);
+    if(guideAccVal !== null){ const idx = 13 - 10; rows[idx].B = rows[idx].B || ""; rows[idx].L = rows[idx].L || ""; rows[idx].M_local = guideAccVal; rows[idx].M_usd = Math.round((guideAccVal / exRate)*100)/100; }
+
+    // assign computed rows to preview
+    appState.preview.rows = rows;
+
+    // compute per-section subtotals in USD
+    let subtotalAccommodation = 0, subtotalSites = 0, subtotalTransfers = 0, subtotalMeals = 0, subtotalGuide = 0;
+    // accommodation rows: row 10..15 -> C_usd
+    for(const a of appState.preview.accommodationRows) if(a.totalUSD!=="") subtotalAccommodation += Number(a.totalUSD);
+    // sites: rows with F not null and not Flight Ticket
+    rows.forEach(r=>{
+      if(r.F && r.F !== "Flight Ticket" && parseNumber(r.G_usd)!==null) subtotalSites += Number(r.G_usd);
+      if(r.I_usd && r.I_usd!=="") subtotalTransfers += Number(r.I_usd);
+      if(r.K_usd && r.K_usd!=="") subtotalMeals += Number(r.K_usd);
+      if(r.M_usd) subtotalGuide += Number(r.M_usd);
+    });
+    // round
+    subtotalAccommodation = Math.round(subtotalAccommodation*100)/100;
+    subtotalSites = Math.round(subtotalSites*100)/100;
+    subtotalTransfers = Math.round(subtotalTransfers*100)/100;
+    subtotalMeals = Math.round(subtotalMeals*100)/100;
+    subtotalGuide = Math.round(subtotalGuide*100)/100;
+
+    const grand = Math.round((subtotalAccommodation + subtotalSites + subtotalTransfers + subtotalMeals + subtotalGuide) * 100)/100;
+
+    appState.preview.summaryTotal = grand;
+    appState.preview.subtotals = {
+      accommodation: subtotalAccommodation,
+      sites: subtotalSites,
+      transfers: subtotalTransfers,
+      meals: subtotalMeals,
+      guide: subtotalGuide
+    };
+  }
+
+  // ---------- Render Review Page with editable fields ----------
+  function renderReviewPage(){
+    $('#reviewQuoteTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
+    computePreviewModel();
+    const rows = appState.preview.rows;
+    const detailDiv = $('#detailTables');
+    detailDiv.innerHTML = '';
+
+    // Accommodation
+    const accomDiv = document.createElement('div');
+    accomDiv.innerHTML = `<h4 class="small">Accommodation (rows 10→15)</h4>`;
+    const t1 = document.createElement('table');
+    t1.innerHTML = `<thead><tr><th>Row</th><th>Place</th><th class="numCell">Total (USD)</th><th class="numCell">Calc D = 70% (USD)</th></tr></thead>`;
+    const b1 = document.createElement('tbody');
+    appState.preview.accommodationRows.forEach(a=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${a.rowIndex}</td>
+        <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${fmt(a.priceLocal)} (local)</div></td>
+        <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.totalUSD!==""?a.totalUSD:''}"></td>
+        <td class="numCell">${a.totalUSD!==""?fmt(Math.round(a.totalUSD*0.7*100)/100):''}</td>`;
+      b1.appendChild(tr);
+    });
+    t1.appendChild(b1); accomDiv.appendChild(t1); detailDiv.appendChild(accomDiv);
+
+    // Sites & Flight Tickets (F/G)
+    const fDiv = document.createElement('div'); fDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G)</h4>`;
+    const t2 = document.createElement('table');
+    t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (USD)</th></tr></thead>`;
+    const b2 = document.createElement('tbody');
+    rows.forEach(r=>{
+      if(r.F && r.F !== ""){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.row}</td>
+          <td>${escapeHtml(r.F)}</td>
+          <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${r.G_usd!==""?r.G_usd:''}" /></td>`;
+        b2.appendChild(tr);
+      }
+    });
+    t2.appendChild(b2); fDiv.appendChild(t2); detailDiv.appendChild(fDiv);
+
+    // Transfers (H/I)
+    const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I) — price per pax (USD)</h4>`;
+    const t3 = document.createElement('table');
+    t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price per pax (USD)</th></tr></thead>`;
+    const b3 = document.createElement('tbody');
+    rows.forEach(r=>{
+      if(r.H && r.H !== ""){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.row}</td>
+          <td>${escapeHtml(r.H)}</td>
+          <td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${r.I_usd!==""?r.I_usd:''}" /></td>`;
+        b3.appendChild(tr);
+      }
+    });
+    t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
+
+    // Meals (J/K)
+    const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K)</h4>`;
+    const t4 = document.createElement('table');
+    t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (USD)</th></tr></thead>`;
+    const b4 = document.createElement('tbody');
+    rows.forEach(r=>{
+      if(r.J && r.J !== ""){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${r.K_usd!==""?r.K_usd:''}" /></td>`;
+        b4.appendChild(tr);
+      }
+    });
+    t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
+
+    // Summary and section subtotals
+    $('#reviewSummary').textContent = `Grand total (USD): $ ${fmt(appState.preview.summaryTotal)}`;
+    const subs = appState.preview.subtotals;
+    $('#sectionSubtotals').innerHTML = `
+      <div class="small">Accommodation subtotal (USD): <strong>$ ${fmt(subs.accommodation)}</strong></div>
+      <div class="small">Sites subtotal (USD): <strong>$ ${fmt(subs.sites)}</strong></div>
+      <div class="small">Transfers subtotal (USD, per pax): <strong>$ ${fmt(subs.transfers)}</strong></div>
+      <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subs.meals)}</strong></div>
+      <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subs.guide)}</strong></div>
+    `;
+
+    // wire up editable inputs
+    Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const p = inp.dataset.path;
+        const valRaw = inp.value.trim();
+        const val = parseNumber(valRaw);
+        if(p.startsWith('F:')){
+          const rowNum = Number(inp.dataset.row);
+          const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+          if(rowObj) rowObj.G_usd = (val===null ? "" : val);
+        } else if(p.startsWith('H:')){
+          const rowNum = Number(inp.dataset.row);
+          const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+          if(rowObj) rowObj.I_usd = (val===null ? "" : val);
+        } else if(p.startsWith('J:')){
+          const rowNum = Number(inp.dataset.row);
+          const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
+          if(rowObj) rowObj.K_usd = (val===null ? "" : val);
+        } else if(p.startsWith('accom:')){
+          // pattern: accom:PLACE:total
+          const rowIndex = Number(inp.dataset.row);
+          const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
+          if(ac){
+            const newUSD = (val===null ? "" : val);
+            ac.totalUSD = newUSD;
+            // update matching rows preview
+            const rowsRow = appState.preview.rows.find(x=>x.row===rowIndex);
+            if(rowsRow){ rowsRow.C_usd = newUSD; rowsRow.D_usd = (newUSD!=="" ? Math.round(newUSD*0.7*100)/100 : ""); }
+          }
+        }
+        recomputeSummaryAndRender();
+      });
+    });
+
+    showStep(5);
+  }
+
+  function recomputeSummaryAndRender(){
+    // recompute grand total from preview.rows using usd columns and from preview.accommodationRows and meals
+    let total=0;
+    // accommodation from preview.accommodationRows (use totalUSD)
+    let subsAcc = 0, subsSites=0, subsTransfers=0, subsMeals=0, subsGuide=0;
+    appState.preview.accommodationRows.forEach(a=>{ if(a.totalUSD!=="") subsAcc += Number(a.totalUSD); });
+
+    appState.preview.rows.forEach(r=>{
+      if(r.G_usd && r.G_usd!=="") subsSites += Number(r.G_usd);
+      if(r.I_usd && r.I_usd!=="") subsTransfers += Number(r.I_usd);
+      if(r.K_usd && r.K_usd!=="") subsMeals += Number(r.K_usd);
+      if(r.M_usd && r.M_usd!=="") subsGuide += Number(r.M_usd);
+    });
+
+    subsAcc = Math.round(subsAcc*100)/100;
+    subsSites = Math.round(subsSites*100)/100;
+    subsTransfers = Math.round(subsTransfers*100)/100;
+    subsMeals = Math.round(subsMeals*100)/100;
+    subsGuide = Math.round(subsGuide*100)/100;
+
+    total = Math.round((subsAcc + subsSites + subsTransfers + subsMeals + subsGuide)*100)/100;
+    appState.preview.summaryTotal = total;
+    appState.preview.subtotals = { accommodation: subsAcc, sites: subsSites, transfers: subsTransfers, meals: subsMeals, guide: subsGuide };
+
+    $('#reviewSummary').textContent = `Grand total (USD): $ ${fmt(total)}`;
+    $('#sectionSubtotals').innerHTML = `
+      <div class="small">Accommodation subtotal (USD): <strong>$ ${fmt(subsAcc)}</strong></div>
+      <div class="small">Sites subtotal (USD): <strong>$ ${fmt(subsSites)}</strong></div>
+      <div class="small">Transfers subtotal (USD, per pax): <strong>$ ${fmt(subsTransfers)}</strong></div>
+      <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subsMeals)}</strong></div>
+      <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subsGuide)}</strong></div>
+    `;
+  }
+
+  // ---------- Click "Show Review & Edit" ----------
+  $('#downloadBtn').addEventListener('click', ()=>{
+    // store counters and trips
+    appState.cairoCounters.apt   = $('#Cairoapt').value;
+    appState.cairoCounters.fd    = $('#Cairofd').value;
+    appState.cairoCounters.night = $('#CairoNight').value;
+    appState.trips.CairoGiza = getChecked('#cbCairoGizaTrips');
+    appState.trips.Sharm     = getChecked('#cbSharmTrips');
+    appState.trips.Luxor     = getChecked('#cbLuxorTrips');
+    appState.trips.Aswan     = getChecked('#cbAswanTrips');
+
+    // recalc preview & render
+    renderReviewPage();
+  });
+
+  $('#backToSteps').addEventListener('click', ()=> showStep(4));
+
+  // apply edits: pushes accommodation price changes into appState.accommodation.price if nights>0
+  $('#applyEdits').addEventListener('click', ()=>{
+    let changes = 0;
+    // for each accommodation preview row if totalUSD changed -> recompute local price (local = USD * exchangeRate)
+    const exRate = parseNumber($('#exchangeRate').value) || 47.7;
+    appState.preview.accommodationRows.forEach(ac=>{
+      const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
+      const newTotalUSD = parseNumber(ac.totalUSD);
+      if(newTotalUSD !== null && ac.nights>0){
+        // compute new local total and price
+        const newLocalTotal = Math.round((newTotalUSD * exRate) * 100)/100;
+        const newPriceLocal = Math.round((newLocalTotal / ac.nights) * 100)/100;
+        appState.accommodation[ac.place].price = String(newPriceLocal);
         changes++;
       }
-    }
-  });
-  alert(`Applied edits. Accommodation prices updated for ${changes} places (if any). You can re-run review to refresh results.`);
-  computePreviewModel();
-  renderReviewPage();
-});
-
-/* ------------------- Original Excel-writing functions preserved (unchanged logic) ------------------- */
-function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
-function set(ws, addr, value){
-  ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
-}
-function ensureRef(ws, minA1, maxA1){
-  const dec = r=>XLSX.utils.decode_cell(r);
-  const enc = o=>XLSX.utils.encode_cell(o);
-  const min = dec(minA1), max = dec(maxA1);
-  const cur = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{c:0,r:0}, e:{c:0,r:0} };
-  const s = { c: Math.min(cur.s.c, min.c), r: Math.min(cur.s.r, min.r) };
-  const e = { c: Math.max(cur.e.c, max.c), r: Math.max(cur.e.r, max.r) };
-  ws['!ref'] = XLSX.utils.encode_range({s,e});
-}
-
-function writeExcelAndDownload(){
-  if(!appState.workbook){ alert('No workbook loaded.'); return; }
-  const sheetName = appState.workbook.SheetNames[0];
-  const ws = appState.workbook.Sheets[sheetName];
-
-  // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
-  let rowF = 10;
-  const ft = n(appState.flightTicket);
-  if(ft !== null){
-    set(ws, `F${rowF}`, "Flight Ticket");
-    set(ws, `G${rowF}`, ft);
-    rowF++;
-  }
-  for(const item of appState.sitesSelected){
-    if(rowF > 40) break;
-    set(ws, `F${rowF}`, item);
-    rowF++;
-  }
-
-  // --- Guide Extras (L/M)
-  const guideTicket = n(appState.guideTicket);
-  if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
-  const guideAcc = n(appState.guideAccomodation);
-  if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
-
-  // --- Trips Column H, rows 10..40
-  let rowH = 10;
-  const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
-  const cntApt = n(appState.cairoCounters.apt) || 0;
-  for(let i=0;i<cntApt;i++) addH("Cairo apt");
-  const cntFd = n(appState.cairoCounters.fd) || 0;
-  for(let i=0;i<cntFd;i++) addH("Cairo fd");
-  const cntNight = n(appState.cairoCounters.night) || 0;
-  for(let i=0;i<cntNight;i++) addH("Cairo night");
-
-  [...(appState.tripsSelected.CairoGiza||[]), ...(appState.tripsSelected.Sharm||[]), ...(appState.tripsSelected.Luxor||[]), ...(appState.tripsSelected.Aswan||[])].forEach(txt=>addH(txt));
-
-  // --- Accommodation
-  function fillAccommodation(place, nights, price, rowIndex){
-    const ni = n(nights) || 0;
-    const pi = n(price) || 0;
-    if(ni>0 && pi>0){
-      set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
-      set(ws, `C${rowIndex}`, ni * pi);
-    } else {
-      set(ws, `B${rowIndex}`, "");
-      set(ws, `C${rowIndex}`, "");
-    }
-  }
-  fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
-  fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
-  fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
-  fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
-  fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
-  fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
-
-  // --- Meals (J/K)
-  let currentRowJ = 10, currentRowK = 10;
-  function writeMeals(mealCategory, mealsQuantityStr){
-    const q = n(mealsQuantityStr);
-    if(q && q>0){
-      set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
-      set(ws, `K${currentRowK}`, q * n(mealCategory));
-      currentRowJ++; currentRowK++;
-    }
-  }
-  mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
-  for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, "");
-
-  ensureRef(ws, 'A1', 'M40');
-
-  // Write and trigger download
-  const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
-  const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = (appState.quotationName || 'Quotation') + '.xlsx';
-  document.body.appendChild(a); a.click(); a.remove();
-}
-
-/* ---------------- small helpers for old containers that may not exist ---------------- */
-function getChecked(container){
-  try {
-    return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value);
-  } catch(e){ return []; }
-}
-
-/* ---------------- initial UI wiring (populate checkboxes for step1 real UI) ---------------- */
-renderChecks('#cbPyramids', lists.Pyramids);
-renderChecks('#cbSakkara', lists.Sakkara);
-renderChecks('#cbCairoGiza', lists.CairoGiza);
-renderChecks('#cbAlexBehera', lists.AlexBehera);
-renderChecks('#cbKafrEtAl', lists.KafrEtAl);
-renderChecks('#cbLuxor', lists.Luxor);
-renderChecks('#cbAswan', lists.Aswan);
-renderChecks('#cbSharm', lists.Sharm);
-renderChecks('#cbMosques', lists.Mosques);
-
-renderChecks('#cbCairoGizaTrips', ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day"]);
-renderChecks('#cbSharmTrips', ["Dep SSH","Arr SSH","City Tour SSH"]);
-renderChecks('#cbLuxorTrips', ["Luxor Station","East","West Fd"]);
-renderChecks('#cbAswanTrips', ["Aswan Station","Aswan apt","Aswan fd"]);
-
-/* --------------- Edge: if user wants to re-render review after manual input changes (allow) -------------- */
-window.recomputeAndRefresh = function(){
-  // read latest inputs in Step2
-  appState.pax = parseInt($('#inputPax').value) || appState.pax;
-  const dv = $('#inputDate').value; if(dv) appState.quoteDate = new Date(dv);
-  appState.xRate = parseFloat($('#inputXRate').value) || appState.xRate;
-  // re-compute & re-render if review visible
-  if(document.getElementById('stepReview').style.display !== 'none'){
-    computePreviewModel(); renderReviewPage();
-  } else {
+    });
+    alert(`Applied edits to state: updated ${changes} accommodation prices (reflected in the form). Preview refreshed.`);
+    // reflect into selects
+    ['ddlPriceCairoGiza','ddlPriceSharm','ddlPriceLuxor','ddlPriceAswan','ddlPriceHurghada','ddlPriceNileCruise'].forEach(id=>{
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      // attempt to set value from appState.accommodation by mapping id -> place
+      const map = {
+        'ddlPriceCairoGiza': 'Cairo/Giza',
+        'ddlPriceSharm': 'Sharm el Sheikh',
+        'ddlPriceLuxor': 'Luxor',
+        'ddlPriceAswan': 'Aswan',
+        'ddlPriceHurghada': 'Hurghada',
+        'ddlPriceNileCruise': 'Nile Cruise'
+      };
+      const place = map[id];
+      if(place && appState.accommodation[place]){
+        const newPrice = appState.accommodation[place].price;
+        // If option exists set it otherwise add option
+        let opt = Array.from(sel.options).find(o => o.value === String(newPrice));
+        if(!opt){
+          opt = document.createElement('option'); opt.value = String(newPrice); opt.text = String(newPrice);
+          sel.appendChild(opt);
+        }
+        sel.value = String(newPrice);
+      }
+    });
+    // recompute and re-render
     computePreviewModel();
-  }
-};
+    renderReviewPage();
+  });
 
-/* --------------- small note to console --------------- */
-console.log('Quotation Builder loaded. Upload an Excel to begin.');
+  // ---------- Small init (no defaults forced) ----------
+  (function init(){ /* nothing forced */ })();
 
-</script>
+  </script>
 </body>
 </html>
