@@ -157,7 +157,7 @@
             <label>Nights
               <select id="ddlNightsCairoGiza"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceCairoGiza"></select>
             </label>
           </div>
@@ -168,7 +168,7 @@
             <label>Nights
               <select id="ddlNightsSharm"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceSharm"></select>
             </label>
           </div>
@@ -182,7 +182,7 @@
             <label>Nights
               <select id="ddlNightsLuxor"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceLuxor"></select>
             </label>
           </div>
@@ -193,7 +193,7 @@
             <label>Nights
               <select id="ddlNightsAswan"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceAswan"></select>
             </label>
           </div>
@@ -207,7 +207,7 @@
             <label>Nights
               <select id="ddlNightsHurghada"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceHurghada"></select>
             </label>
           </div>
@@ -218,7 +218,7 @@
             <label>Nights
               <select id="ddlNightsNileCruise"></select>
             </label>
-            <label>Price/Night (local currency)
+            <label>Price/Night (USD)
               <select id="ddlPriceNileCruise"></select>
             </label>
           </div>
@@ -239,7 +239,7 @@
           <label>Exchange Rate (M2) — local currency → USD (divide local / rate). Default 47.7
             <input id="exchangeRate" type="number" step="0.01" value="47.7" />
           </label>
-          <label style="align-self:center; font-size:12px; color:var(--muted)">Tip: site & transfer prices are treated as local currency and will be converted to USD in the report.</label>
+          <label style="align-self:center; font-size:12px; color:var(--muted)">Tip: site & transfer prices are treated as local currency and will be converted to USD in the report. Accommodation prices are USD.</label>
         </div>
       </div>
 
@@ -343,6 +343,8 @@
             <div class="small muted">Editable numeric fields are highlighted yellow. Changes recompute totals immediately. Click "Apply Edits to State" to persist accommodation price changes back to the form.</div>
             <div style="height:12px"></div>
             <div id="sectionSubtotals" class="small"></div>
+            <div style="height:8px"></div>
+            <div id="singleSupplement" class="small"></div>
           </div>
         </div>
       </div>
@@ -442,7 +444,7 @@
   renderChecks('#cbLuxorTrips', lists.LuxorTrips);
   renderChecks('#cbAswanTrips', lists.AswanTrips);
 
-  // populate nights dropdowns and price dropdowns (local currency)
+  // populate nights dropdowns and price dropdowns (accommodation prices are USD)
   const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
   nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
   const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
@@ -523,8 +525,8 @@
         const row = rows[r];
         if(!row || !row[0]) continue;
         const name = String(row[0]).trim();
-        const before = parseNumber(row[1]) || 0; // column B
-        const after  = parseNumber(row[2]) || null; // column C
+        const before = parseNumber(row[1]) || 0; // column B (before date)
+        const after  = parseNumber(row[2]) || null; // column C (after date)
         appState.lookups.sites[name] = { before, after };
       }
     } else { console.warn('Sites sheet not found'); }
@@ -538,15 +540,17 @@
       for(let r=1; r<rows.length; r++){
         const row = rows[r];
         if(!row) continue;
-        // before: cols A-D -> index 0..3 => name at 0, before B/C/D at 1..3
+        // Before-date block A:D (name at col A (0), values B(1),C(2),D(3))
+        // After-date block E:H (name at col E (4), values F(5),G(6),H(7))
         const nameBefore = row[0];
-        const nameAfter  = row[4]; // maybe column E
+        const nameAfter  = row[4];
         const keyName = (nameBefore || nameAfter);
         if(!keyName) continue;
         const name = String(keyName).trim();
         const beforeArr = [ parseNumber(row[1])||0, parseNumber(row[2])||0, parseNumber(row[3])||0 ];
         const afterArr  = [ parseNumber(row[5])||null, parseNumber(row[6])||null, parseNumber(row[7])||null ];
-        // if after arr nulls, try to compute multiplier if formulas are present in sheet raw (sheet_to_json raw might reveal formula strings). For now take numeric where present.
+        // fallback: if afterArr has nulls, set them to corresponding beforeArr values
+        for(let i=0;i<3;i++) if(afterArr[i] === null) afterArr[i] = beforeArr[i];
         appState.lookups.transfers[name] = { before: beforeArr, after: afterArr };
       }
     } else { console.warn('Transfers sheet not found'); }
@@ -731,20 +735,18 @@
 
     const thresholdDate = new Date(2025,10,1); // nov 1 2025
 
-    // Accommodation rows B10..B15
+    // Accommodation rows B10..B15 (ACCOMMODATION PRICES ARE USD — DO NOT CONVERT)
     const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
     for(let i=0;i<accomOrder.length;i++){
       const place = accomOrder[i];
       const rowIndex = 10 + i;
       const nights = parseNumber(appState.accommodation[place].nights) || 0;
-      const priceLocal = parseNumber(appState.accommodation[place].price) || 0; // local currency
-      const totalLocal = nights>0 && priceLocal>0 ? nights * priceLocal : "";
-      // convert to USD:
-      const totalUSD = (totalLocal==="" ? "" : Math.round((totalLocal / exRate) * 100)/100);
-      appState.preview.accommodationRows.push({ rowIndex, place, nights, priceLocal, totalLocal, totalUSD });
+      const priceUSD = parseNumber(appState.accommodation[place].price) || 0; // USER: accommodation price is USD
+      const totalUSD = (nights>0 && priceUSD>0) ? Math.round((nights * priceUSD) * 100)/100 : "";
+      appState.preview.accommodationRows.push({ rowIndex, place, nights, priceUSD, totalUSD });
     }
 
-    // Meals J/K
+    // Meals J/K (local currency -> convert to USD)
     let mealRowIndex = 10;
     for(const tier of mealTiers){
       const qty = parseNumber(appState.meals[tier]) || 0;
@@ -759,15 +761,14 @@
     // Build rows 10..40 base empty
     const rows = [];
     for(let r=10;r<=40;r++){
-      rows.push({ row:r, B:"", C_local:"", C_usd:"", D_usd:"", F:"", G_local:"", G_usd:"", H:"", I_local:"", I_usd:"", J:"", K_local:"", K_usd:"" });
+      rows.push({ row:r, B:"", C_usd:"", D_usd:"", F:"", G_usd:"", H:"", I_usd:"", J:"", K_usd:"", M_usd: "" });
     }
 
-    // Fill B/C from accomRows (C_local), and D_usd = 70% of C_usd
+    // Fill B/C from accomRows (C_usd), and D_usd = 70% of C_usd
     for(const a of appState.preview.accommodationRows){
       const idx = a.rowIndex - 10;
       rows[idx].B = `${a.nights>0 ? a.nights + " nights " : ""}${a.place}`;
-      rows[idx].C_local = a.totalLocal === "" ? "" : a.totalLocal;
-      rows[idx].C_usd = a.totalUSD === "" ? "" : a.totalUSD;
+      rows[idx].C_usd = a.totalUSD === "" ? "" : a.totalUSD; // accommodation already USD
       rows[idx].D_usd = (a.totalUSD!=="" ? Math.round(a.totalUSD * 0.7 * 100)/100 : "");
     }
 
@@ -775,7 +776,6 @@
     for(const m of appState.preview.mealRows){
       const idx = m.rowIndex - 10;
       rows[idx].J = `${m.qty} ${m.tier} meals`;
-      rows[idx].K_local = m.totalLocal;
       rows[idx].K_usd = m.totalUSD;
     }
 
@@ -791,20 +791,19 @@
       const entry = fList[i];
       rows[rowIndex - 10].F = entry.label;
       if(entry.label === 'Flight Ticket'){
-        rows[rowIndex - 10].G_local = entry.value !== null ? entry.value : "";
-        // treat flight ticket number as numeric (not currency) — but we will show as USD numeric (same number)
         rows[rowIndex - 10].G_usd = entry.value !== null ? Number(entry.value) : "";
       } else {
-        // lookup site price
+        // lookup site price from lookups
         const sname = entry.label;
         const sl = appState.lookups.sites[sname];
         if(sl){
           const useAfter = (qDate >= thresholdDate);
+          // user rule: sites use column B if before 1/11/2025 and C if after
           const priceLocal = useAfter ? (sl.after !== null ? sl.after : sl.before) : sl.before;
-          rows[rowIndex - 10].G_local = priceLocal === undefined ? "" : priceLocal;
-          rows[rowIndex - 10].G_usd = (priceLocal === "" || priceLocal === null || priceLocal === undefined) ? "" : Math.round((priceLocal / exRate) * 100)/100;
+          // convert site (local) to USD using exchange rate
+          const priceUSD = (priceLocal === "" || priceLocal === null || priceLocal === undefined) ? "" : Math.round((priceLocal / exRate) * 100)/100;
+          rows[rowIndex - 10].G_usd = priceUSD;
         } else {
-          rows[rowIndex - 10].G_local = "";
           rows[rowIndex - 10].G_usd = "";
         }
       }
@@ -830,26 +829,25 @@
       if(rowIndex>40) break;
       const name = hList[i];
       rows[rowIndex - 10].H = name;
-      if(!name){ rows[rowIndex - 10].I_local = ""; rows[rowIndex - 10].I_usd = ""; continue; }
+      if(!name){ rows[rowIndex - 10].I_usd = ""; continue; }
       const tr = appState.lookups.transfers[name];
-      if(!tr){ rows[rowIndex - 10].I_local = ""; rows[rowIndex - 10].I_usd = ""; continue; }
+      if(!tr){ rows[rowIndex - 10].I_usd = ""; continue; }
       const useAfter = (qDate >= thresholdDate);
-      const arr = useAfter ? (tr.after.map(v=>v===null?0:v)) : tr.before;
+      const arr = useAfter ? tr.after : tr.before; // arr are local currency numbers
       // pick column by pax: <=7 -> idx 0, <=15 -> idx1 else idx2
       const idx = (pax <= 7 ? 0 : (pax <= 15 ? 1 : 2));
       const localValue = arr[idx] || 0;
-      // transfers subtotal should be divided by number of pax (per person)
+      // transfers subtotal should be divided by number of pax (per person local)
       const perPersonLocal = (pax>0 ? (localValue / pax) : 0);
-      rows[rowIndex - 10].I_local = Math.round(perPersonLocal * 100)/100;
-      rows[rowIndex - 10].I_usd = Math.round((perPersonLocal / exRate) * 100)/100;
+      const perPersonUSD = Math.round((perPersonLocal / exRate) * 100)/100;
+      rows[rowIndex - 10].I_usd = perPersonUSD;
     }
 
-    // Guide extras L/M if present in state: put them into preview low rows (e.g., L12/M12 => row 12)
+    // Guide extras L/M if present in state: put them into preview low rows (e.g., M12)
     const guideTicketVal = parseNumber(appState.guideTicket);
-    if(guideTicketVal !== null){ const idx = 12 - 10; rows[idx].B = rows[idx].B || ""; rows[idx].G_local = rows[idx].G_local || ""; rows[idx].L = "Guide Ticket"; rows[idx].M_local = guideTicketVal; rows[idx].M_usd = Math.round((guideTicketVal / exRate)*100)/100; }
-
+    if(guideTicketVal !== null){ const idx = 12 - 10; rows[idx].M_usd = Math.round((guideTicketVal / exRate)*100)/100; }
     const guideAccVal = parseNumber(appState.guideAccomodation);
-    if(guideAccVal !== null){ const idx = 13 - 10; rows[idx].B = rows[idx].B || ""; rows[idx].L = rows[idx].L || ""; rows[idx].M_local = guideAccVal; rows[idx].M_usd = Math.round((guideAccVal / exRate)*100)/100; }
+    if(guideAccVal !== null){ const idx = 13 - 10; rows[idx].M_usd = Math.round((guideAccVal / exRate)*100)/100; }
 
     // assign computed rows to preview
     appState.preview.rows = rows;
@@ -858,13 +856,16 @@
     let subtotalAccommodation = 0, subtotalSites = 0, subtotalTransfers = 0, subtotalMeals = 0, subtotalGuide = 0;
     // accommodation rows: row 10..15 -> C_usd
     for(const a of appState.preview.accommodationRows) if(a.totalUSD!=="") subtotalAccommodation += Number(a.totalUSD);
-    // sites: rows with F not null and not Flight Ticket
+    // sites/transfers/meals/guide from rows
     rows.forEach(r=>{
       if(r.F && r.F !== "Flight Ticket" && parseNumber(r.G_usd)!==null) subtotalSites += Number(r.G_usd);
       if(r.I_usd && r.I_usd!=="") subtotalTransfers += Number(r.I_usd);
       if(r.K_usd && r.K_usd!=="") subtotalMeals += Number(r.K_usd);
-      if(r.M_usd) subtotalGuide += Number(r.M_usd);
+      if(r.M_usd && r.M_usd!=="") subtotalGuide += Number(r.M_usd);
+      // Flight Ticket values (if numeric) are included in sites or separately? We'll include flight tickets in sites subtotal (G_usd for label Flight Ticket already set to numeric)
+      if(r.F && r.F === "Flight Ticket" && r.G_usd && r.G_usd!=="") subtotalSites += Number(r.G_usd);
     });
+
     // round
     subtotalAccommodation = Math.round(subtotalAccommodation*100)/100;
     subtotalSites = Math.round(subtotalSites*100)/100;
@@ -901,7 +902,7 @@
     appState.preview.accommodationRows.forEach(a=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${a.rowIndex}</td>
-        <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${fmt(a.priceLocal)} (local)</div></td>
+        <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${fmt(a.priceUSD)} (USD)</div></td>
         <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.totalUSD!==""?a.totalUSD:''}"></td>
         <td class="numCell">${a.totalUSD!==""?fmt(Math.round(a.totalUSD*0.7*100)/100):''}</td>`;
       b1.appendChild(tr);
@@ -964,6 +965,9 @@
       <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subs.meals)}</strong></div>
       <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subs.guide)}</strong></div>
     `;
+    // Single Supplement (70% of accommodation subtotal)
+    const singleSupp = Math.round((subs.accommodation * 0.7) * 100)/100;
+    $('#singleSupplement').innerHTML = `<div class="small">Single Supplement (70% of accommodation): <strong>$ ${fmt(singleSupp)}</strong></div>`;
 
     // wire up editable inputs
     Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
@@ -1034,6 +1038,8 @@
       <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subsMeals)}</strong></div>
       <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subsGuide)}</strong></div>
     `;
+    const singleSupp = Math.round((subsAcc * 0.7) * 100)/100;
+    $('#singleSupplement').innerHTML = `<div class="small">Single Supplement (70% of accommodation): <strong>$ ${fmt(singleSupp)}</strong></div>`;
   }
 
   // ---------- Click "Show Review & Edit" ----------
@@ -1056,16 +1062,13 @@
   // apply edits: pushes accommodation price changes into appState.accommodation.price if nights>0
   $('#applyEdits').addEventListener('click', ()=>{
     let changes = 0;
-    // for each accommodation preview row if totalUSD changed -> recompute local price (local = USD * exchangeRate)
-    const exRate = parseNumber($('#exchangeRate').value) || 47.7;
+    // accommodation preview rows: if totalUSD changed -> recompute priceUSD = totalUSD / nights and update appState.accommodation[place].price
     appState.preview.accommodationRows.forEach(ac=>{
       const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
       const newTotalUSD = parseNumber(ac.totalUSD);
       if(newTotalUSD !== null && ac.nights>0){
-        // compute new local total and price
-        const newLocalTotal = Math.round((newTotalUSD * exRate) * 100)/100;
-        const newPriceLocal = Math.round((newLocalTotal / ac.nights) * 100)/100;
-        appState.accommodation[ac.place].price = String(newPriceLocal);
+        const newPriceUSD = Math.round((newTotalUSD / ac.nights) * 100)/100;
+        appState.accommodation[ac.place].price = String(newPriceUSD);
         changes++;
       }
     });
@@ -1074,7 +1077,6 @@
     ['ddlPriceCairoGiza','ddlPriceSharm','ddlPriceLuxor','ddlPriceAswan','ddlPriceHurghada','ddlPriceNileCruise'].forEach(id=>{
       const sel = document.getElementById(id);
       if(!sel) return;
-      // attempt to set value from appState.accommodation by mapping id -> place
       const map = {
         'ddlPriceCairoGiza': 'Cairo/Giza',
         'ddlPriceSharm': 'Sharm el Sheikh',
