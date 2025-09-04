@@ -641,7 +641,7 @@
       const nights = parseNumber(appState.accommodation[place].nights) || 0;
       const priceLocal = parseNumber(appState.accommodation[place].price) || 0;
       const totalLocal = (nights>0 && priceLocal>0) ? nights * priceLocal : "";
-      const totalUSD = (totalLocal==="" ? "" : Math.round((totalLocal / exRate) * 100)/100);
+      const totalUSD = (totalLocal==="" ? "" : Math.round((totalLocal) * 100)/100);
       appState.preview.accommodationRows.push({ rowIndex, place, nights, priceLocal, totalLocal, totalUSD });
     }
 
