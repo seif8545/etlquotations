@@ -44,7 +44,7 @@
     table { width:100%; border-collapse:collapse; font-size:13px; }
     th, td { border-bottom:1px solid #f1f5f9; padding:8px 6px; text-align:left; vertical-align:middle; }
     th { background:linear-gradient(90deg,#fbfdff,#f5fbff); color:#0b4bcc; font-weight:700; }
-    .numCell { width:160px; text-align:right; }
+    .numCell { width:140px; text-align:right; }
     .editable { background:#fffbe6; border:1px dashed #ffe58f; padding:6px 8px; border-radius:6px; min-width:60px; text-align:right; }
     .muted { color:var(--muted); font-size:13px; }
     .summary { font-size:15px; font-weight:700; color:#0b5fff; text-align:right; }
@@ -61,7 +61,7 @@
     <header>
       <div>
         <h1>Quotation Builder</h1>
-        <div class="sub">Upload your workbook (Transfers & Sites sheets). Live review & edit — no download required.</div>
+        <div class="sub">Upload your workbook (any name). This tool reads the Transfers & Sites sheets, runs the formulas and shows a live editable report (no download required).</div>
       </div>
       <div class="muted small">Client-only (SheetJS)</div>
     </header>
@@ -86,7 +86,7 @@
           <h3>Quotation Info</h3>
           <div class="stack">
             <label>Quotation Name <input id="quotationName" type="text" placeholder="e.g. Smith Family Tour" /></label>
-            <label>Flight Ticket (number) <input id="flightTicket" type="text" inputmode="numeric" placeholder="e.g. 2" /></label>
+            <label>Flight Ticket (number or cost in local currency) <input id="flightTicket" type="text" inputmode="numeric" placeholder="e.g. 2 or 2000" /></label>
           </div>
         </div>
       </div>
@@ -157,7 +157,7 @@
             <label>Nights
               <select id="ddlNightsCairoGiza"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceCairoGiza"></select>
             </label>
           </div>
@@ -168,7 +168,7 @@
             <label>Nights
               <select id="ddlNightsSharm"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceSharm"></select>
             </label>
           </div>
@@ -182,7 +182,7 @@
             <label>Nights
               <select id="ddlNightsLuxor"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceLuxor"></select>
             </label>
           </div>
@@ -193,7 +193,7 @@
             <label>Nights
               <select id="ddlNightsAswan"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceAswan"></select>
             </label>
           </div>
@@ -207,7 +207,7 @@
             <label>Nights
               <select id="ddlNightsHurghada"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceHurghada"></select>
             </label>
           </div>
@@ -218,7 +218,7 @@
             <label>Nights
               <select id="ddlNightsNileCruise"></select>
             </label>
-            <label>Price/Night 
+            <label>Price/Night (USD)
               <select id="ddlPriceNileCruise"></select>
             </label>
           </div>
@@ -239,7 +239,7 @@
           <label>Exchange Rate (M2) — local currency → USD (divide local / rate). Default 47.7
             <input id="exchangeRate" type="number" step="0.01" value="47.7" />
           </label>
-          <label style="align-self:center; font-size:12px; color:var(--muted)">Site & transfer rows display in local currency (EGP) in the detail view. Subtotals & totals are in USD.</label>
+          <label style="align-self:center; font-size:12px; color:var(--muted)">Tip: site & transfer prices are treated as EGP and will be converted to USD in subtotals. Accommodation inputs are USD.</label>
         </div>
       </div>
 
@@ -253,15 +253,15 @@
     <section id="step3" class="step">
       <div class="grid cols-3">
         <div class="card">
-          <h3>Guide Ticket</h3>
+          <h3>Guide Ticket (EGP)</h3>
           <input id="TextBoxGuideTicket" type="text" inputmode="numeric" placeholder="0" />
         </div>
         <div class="card">
-          <h3>Guide Accommodation</h3>
+          <h3>Guide Accommodation (EGP)</h3>
           <input id="TextBoxGuideAccomodation" type="text" inputmode="numeric" placeholder="0" />
         </div>
         <div class="card">
-          <h3>Meals per Price Tier (local currency)</h3>
+          <h3>Meals per Price Tier (EGP)</h3>
           <div class="stack" id="mealsSelects"></div>
         </div>
       </div>
@@ -340,11 +340,11 @@
             <h3 style="margin-top:0">Summary</h3>
             <div id="reviewSummary" class="summary">Computing...</div>
             <div style="height:12px"></div>
-            <div class="small muted">Editable numeric fields: yellow. Changes recompute totals immediately. Click "Apply Edits to State" to persist accommodation price changes back to the form.</div>
+            <div class="small muted">Editable numeric fields are highlighted yellow. Changes recompute totals immediately. Click "Apply Edits to State" to persist accommodation price changes back to the form.</div>
             <div style="height:12px"></div>
             <div id="sectionSubtotals" class="small"></div>
             <div style="height:8px"></div>
-            <div id="singleSupplement" class="small" style="font-weight:700;"></div>
+            <div id="singleSupplement" class="small"></div>
           </div>
         </div>
       </div>
@@ -353,12 +353,13 @@
   </div>
 
   <script>
-  // ---------- Full appState ----------
+  // ---------- Full appState (keeps everything) ----------
   const appState = {
     workbook: null,
     sheetName: null,
     quotationName: "",
     flightTicket: "",
+    // step inputs
     sites: [],
     accommodation: {
       "Cairo/Giza": { nights: "0", price: "0" },
@@ -366,24 +367,32 @@
       "Luxor": { nights: "0", price: "0" },
       "Aswan": { nights: "0", price: "0" },
       "Hurghada": { nights: "0", price: "0" },
-      "Nile Cruise": { nights: "0", price: "0" }
+      "Nile Cruise": { nights: "0", price: "0" },
     },
     guideTicket: "",
     guideAccomodation: "",
     meals: { "300":"0","400":"0","500":"0","600":"0","700":"0","800":"0","900":"0","1000":"0","1500":"0","2000":"0" },
     cairoCounters: { apt:"0", fd:"0", night:"0" },
     trips: { "CairoGiza": [], "Sharm": [], "Luxor": [], "Aswan": [] },
+
+    // lookups read from uploaded workbook
     lookups: { sites: {}, transfers: {} },
+
+    // preview model used by review page
     preview: { rows: [], accommodationRows: [], mealRows: [], summaryTotal: 0, subtotals: {} }
   };
 
-  // ---------- Helpers ----------
+  // ---------- Helper utilities ----------
   const $ = sel => document.querySelector(sel);
   function showStep(n){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); $('#step'+n).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
   function optionRange(sel, from, to, withZero=false){
     sel.innerHTML="";
     if(withZero){ const z = document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
     for(let i=from;i<=to;i++){ const o=document.createElement('option'); o.value=String(i); o.text=String(i); sel.appendChild(o); }
+  }
+  function optionList(sel, arr, includeZero=true){
+    sel.innerHTML=""; if(includeZero){ const z=document.createElement('option'); z.value="0"; z.text="0"; sel.appendChild(z); }
+    arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.text=String(v); sel.appendChild(o); });
   }
   function renderChecks(container, items){
     const el=$(container); el.innerHTML="";
@@ -398,10 +407,18 @@
   }
   function getChecked(container){ return Array.from(document.querySelectorAll(container+" input[type=checkbox]:checked")).map(cb=>cb.value); }
   function parseNumber(v){ if(v===null||v===undefined||v==="") return null; const s=String(v).toString().replace(/,/g,'').trim(); if(s==="") return null; const n=Number(s); return Number.isFinite(n)?n:null; }
-  function fmt(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
+  // Round and format to one decimal place and remove floating artifacts
+  function fmtNum(n){
+    if(n===null||n===undefined||n==="") return "";
+    const rounded = Math.round(Number(n) * 10) / 10; // 1 decimal place
+    // ensure -0 not shown
+    const final = (Math.abs(rounded) === 0 ? 0 : rounded);
+    return final.toLocaleString('en-US',{minimumFractionDigits:0, maximumFractionDigits:1});
+  }
+  function fmt(n){ return fmtNum(n); }
   function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // ---------- Static lists ----------
+  // ---------- Static lists for checkboxes (same as original) ----------
   const lists = {
     Pyramids: ["Pyramids","Khufu Pyramid","Khafra Pyramid","Menkaure Pyramid","Grave of Mer As Ankh"],
     Sakkara: ["Memphis","Sakkara","Nobles Cemetery","South Cemetery","All Sakkara","Zoser Pyramid (Inside)","Serapeum Sakkara","Mereruka"],
@@ -412,6 +429,7 @@
     Aswan: ["Abu Simbel","Unfinished Obelisk","Philae","Edfu","Kom Ombo","Nubian Museum","High Dam","Qubet Al Hawa","Al Kalabsha","AlKab","Abu Simbel Celebration"],
     Sharm: ["Parasailing","Jet Ski","Banana Boat","King tut Mus","Submarine","St Catherine","Neverland without dinner","Neverland with dinner","Dolphin","Sea Trip","Dinner Cruise","Quad Bike","Sharm Museum","Aqua Park"],
     Mosques: ["Al Bahnasa","Al Azhar Mosque","Imam Al Hussein","Sheikh Zayed Al Kawthari","Luqman Al Hakim","Desouqi Mosque","Imam Ahmed El Badawy","Imam Shafi","Sayed Sakina","Sayeda Ruqayya","El Sayeda Nafisa","Al Ezz bin Abdul Salam","Kamal Ibn Hammam","Ibn Atta Allah Al Sakandary"],
+
     CairoGizaTrips: ["Cairo hd","Cairo fd October","Cairo apt + fd","Cairo open day","Alex fd","Ain sukhna","Cairo apt October","Sphinx apt","Sphinx apt fd","New capital apt","New capital apt fd","Quick Alex","Quick Sukhna","Minya","Oasis","Fayoum","Wadi Rayan","Zafarana","Farafra","Hurghada","Matrouh","Ras Sedr","Sharm","Dahab","Luxor","Aswan","Tanta","On"],
     SharmTrips: ["Dep SSH","Arr SSH","Transfer Hotel SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","City Tour SSH","Dep + Arr APT Cairo - SSH","Ras Mohamed Half Day ( SSH )","Ras Mohamed Full Day ( SSH )","St Catherine","St Catherine Moses","Cairo One Way ( SSH )","Orientation Dahab Full Day (Vehicle From Dahab)","Orientation Dahab Half Day (Vehicle From Dahab)","Dahab Jeep Safari ( SSH )","DAHAB ZAVYOT - SSH","Dahab ( Nuweiba ) Adventure"],
     LuxorTrips: ["Luxor Station","East","West Fd","West","Dandara","Dandara Abydoss","Hurghada Luxor","Luxor apt"],
@@ -433,20 +451,21 @@
   renderChecks('#cbLuxorTrips', lists.LuxorTrips);
   renderChecks('#cbAswanTrips', lists.AswanTrips);
 
-  // populates options
+  // populate nights dropdowns and price dropdowns (accommodation now in USD)
   const nightsIds = ['ddlNightsCairoGiza','ddlNightsSharm','ddlNightsLuxor','ddlNightsAswan','ddlNightsHurghada','ddlNightsNileCruise'];
   nightsIds.forEach(id => optionRange(document.getElementById(id), 0, 10, false));
-  const price30to150 = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
+  // Price options for accommodation (USD)
+  const priceUsdOptions = [0,30,40,50,60,70,80,90,100,110,120,130,140,150,200,250];
   const priceNileCruise = [0,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,300,350,400];
   function fillPrice(selId, arr){ const el=document.getElementById(selId); el.innerHTML=""; arr.forEach(v=>{const o=document.createElement('option'); o.value=String(v); o.text=String(v); el.appendChild(o);}); }
-  fillPrice('ddlPriceCairoGiza', price30to150);
-  fillPrice('ddlPriceSharm', price30to150);
-  fillPrice('ddlPriceLuxor', price30to150);
-  fillPrice('ddlPriceAswan', price30to150);
-  fillPrice('ddlPriceHurghada', price30to150);
+  fillPrice('ddlPriceCairoGiza', priceUsdOptions);
+  fillPrice('ddlPriceSharm', priceUsdOptions);
+  fillPrice('ddlPriceLuxor', priceUsdOptions);
+  fillPrice('ddlPriceAswan', priceUsdOptions);
+  fillPrice('ddlPriceHurghada', priceUsdOptions);
   fillPrice('ddlPriceNileCruise', priceNileCruise);
 
-  // meals dropdowns
+  // meals dropdowns (EGP)
   const mealTiers = ["300","400","500","600","700","800","900","1000","1500","2000"];
   const mealsWrap = document.getElementById('mealsSelects');
   mealTiers.forEach(tier=>{
@@ -471,9 +490,10 @@
       const data=new Uint8Array(evt.target.result);
       try {
         appState.workbook = XLSX.read(data, { type:'array' });
+        // pick first sheet as primary (Quotation sheet) if needed
         appState.sheetName = appState.workbook.SheetNames[0];
         parseLookupsFromWorkbook();
-        // populate UI with workbook E3/J2 if present
+        // populate UI with E3 / J2 default values if available
         const workbookPeople = readCellA1(appState.sheetName, 'E3');
         if(parseNumber(workbookPeople) !== null) $('#numPax').value = parseNumber(workbookPeople);
         const workbookDate = readCellA1(appState.sheetName, 'J2');
@@ -493,6 +513,7 @@
     reader.readAsArrayBuffer(file);
   });
 
+  // find sheet by name fuzzy
   function findSheetNameLike(sub){
     if(!appState.workbook) return null;
     const name = appState.workbook.SheetNames.find(n => n.toLowerCase().includes(sub.toLowerCase()));
@@ -500,45 +521,50 @@
   }
 
   function parseLookupsFromWorkbook(){
+    // reset
     appState.lookups = { sites: {}, transfers: {} };
 
-    // Sites sheet: find 'site' or 'sites'
+    // Sites sheet: look for name containing 'site'
     const sitesSheetName = findSheetNameLike('site') || findSheetNameLike('sites');
     if(sitesSheetName){
       const sht = appState.workbook.Sheets[sitesSheetName];
       const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
-      for(let r=1;r<rows.length;r++){
+      for(let r=1; r<rows.length; r++){
         const row = rows[r];
         if(!row || !row[0]) continue;
         const name = String(row[0]).trim();
-        const before = parseNumber(row[1]) || 0; // column B
-        const after  = parseNumber(row[2]) || null; // column C
+        const before = parseNumber(row[1]) || 0; // column B (EGP)
+        const after  = parseNumber(row[2]) || null; // column C (EGP)
         appState.lookups.sites[name] = { before, after };
       }
     } else { console.warn('Sites sheet not found'); }
 
-    // Transfers sheet
+    // Transfers sheet: find 'transfer' sheet
     const transfersSheetName = findSheetNameLike('transfer') || findSheetNameLike('transfers');
     if(transfersSheetName){
       const sht = appState.workbook.Sheets[transfersSheetName];
       const rows = XLSX.utils.sheet_to_json(sht, { header:1, raw:true });
-      for(let r=1;r<rows.length;r++){
+      // header at row 0; data rows start at 1
+      for(let r=1; r<rows.length; r++){
         const row = rows[r];
         if(!row) continue;
-        // Name may be in col A or E
-        const nameKey = row[0] || row[4];
-        if(!nameKey) continue;
-        const name = String(nameKey).trim();
-        // before: cols B,C,D -> index 1,2,3
-        const before = [ parseNumber(row[1])||0, parseNumber(row[2])||0, parseNumber(row[3])||0 ];
-        // after: cols F,G,H -> index 5,6,7
-        const after = [ parseNumber(row[5])||null, parseNumber(row[6])||null, parseNumber(row[7])||null ];
-        // if after contains nulls, we can fallback in compute to multipliers if needed
-        appState.lookups.transfers[name] = { before, after };
+        const nameBefore = row[0];
+        const nameAfter  = row[4]; // maybe column E
+        const keyName = (nameBefore || nameAfter);
+        if(!keyName) continue;
+        const name = String(keyName).trim();
+        const beforeArr = [ parseNumber(row[1])||0, parseNumber(row[2])||0, parseNumber(row[3])||0 ]; // B,C,D
+        // after columns: E?F?G?H? (we look at indexes 5..7 like earlier)
+        const afterArr = [
+          parseNumber(row[5]) !== null ? parseNumber(row[5]) : null,
+          parseNumber(row[6]) !== null ? parseNumber(row[6]) : null,
+          parseNumber(row[7]) !== null ? parseNumber(row[7]) : null
+        ];
+        // fallback: if afterArr values are null, try to compute from formulas or header multipliers is not reliable client-side; we'll keep nulls and handle later by using beforeArr as fallback
+        appState.lookups.transfers[name] = { before: beforeArr, after: afterArr };
       }
     } else { console.warn('Transfers sheet not found'); }
-
-    console.log('Lookups parsed', appState.lookups);
+    console.log('Lookups loaded:', appState.lookups);
   }
 
   function readCellA1(sheetName, a1){
@@ -550,12 +576,13 @@
     return cell.v !== undefined ? cell.v : null;
   }
 
-  // ---------- Navigation ----------
+  // ---------- Navigation (Next/Back) ----------
   $('#toStep2').addEventListener('click', ()=>{
     if(!appState.workbook){ alert('Please upload an Excel (.xlsx) first.'); return; }
     appState.quotationName = $('#quotationName').value.trim();
     if(!appState.quotationName){ alert('Please provide a Quotation Name.'); return; }
     appState.flightTicket = $('#flightTicket').value.trim();
+    // collect sites from checkboxes
     appState.sites = []
       .concat(getChecked('#cbPyramids'))
       .concat(getChecked('#cbSakkara'))
@@ -569,6 +596,7 @@
   });
   $('#back1').addEventListener('click', ()=> showStep(1));
   $('#toStep3').addEventListener('click', ()=>{
+    // persist accommodation selects (accommodation inputs are USD)
     appState.accommodation["Cairo/Giza"].nights = $('#ddlNightsCairoGiza').value;
     appState.accommodation["Cairo/Giza"].price  = $('#ddlPriceCairoGiza').value;
     appState.accommodation["Sharm el Sheikh"].nights = $('#ddlNightsSharm').value;
@@ -593,7 +621,7 @@
   $('#back3').addEventListener('click', ()=> showStep(3));
   $('#resetBtn1').addEventListener('click', ()=> { if(confirm('Clear all current inputs?')) location.reload(); });
 
-  // ---------- Excel write functions left in place (not used for review) ----------
+  // ---------- Keep original Excel-writing functions (unchanged for parity) ----------
   function n(v){ const x=parseInt(v,10); return Number.isFinite(x) ? x : null; }
   function set(ws, addr, value){
     ws[addr] = (typeof value==='number') ? { t:'n', v:value } : { t:'s', v:String(value) };
@@ -608,12 +636,94 @@
     ws['!ref'] = XLSX.utils.encode_range({s,e});
   }
 
-  // ---------- Compute preview model (replicate formulas) ----------
+  function writeExcelAndDownload(){
+    if(!appState.workbook){ alert('No workbook loaded.'); return; }
+    const sheetName = appState.workbook.SheetNames[0];
+    const ws = appState.workbook.Sheets[sheetName];
+
+    // --- First: Flight Ticket + First Page Sites (Column F/G, rows 10..40)
+    let rowF = 10;
+    const ft = n(appState.flightTicket);
+    if(ft !== null){
+      set(ws, `F${rowF}`, "Flight Ticket");
+      set(ws, `G${rowF}`, ft);
+      rowF++;
+    }
+    for(const item of appState.sites){
+      if(rowF > 40) break;
+      set(ws, `F${rowF}`, item);
+      rowF++;
+    }
+
+    // --- Guide Extras (L/M)
+    const guideTicket = n(appState.guideTicket);
+    if(guideTicket !== null){ set(ws, 'L12', "Guide Ticket"); set(ws, 'M12', guideTicket); }
+    const guideAcc = n(appState.guideAccomodation);
+    if(guideAcc !== null){ set(ws, 'L13', "GuideAccomodation"); set(ws, 'M13', guideAcc); }
+
+    // --- Trips Column H, rows 10..40
+    let rowH = 10;
+    const addH = txt => { if(rowH<=40){ set(ws, `H${rowH}`, txt); rowH++; } };
+    const cntApt = n(appState.cairoCounters.apt) || 0;
+    for(let i=0;i<cntApt;i++) addH("Cairo apt");
+    const cntFd = n(appState.cairoCounters.fd) || 0;
+    for(let i=0;i<cntFd;i++) addH("Cairo fd");
+    const cntNight = n(appState.cairoCounters.night) || 0;
+    for(let i=0;i<cntNight;i++) addH("Cairo night");
+
+    // Then each checked item once, in order:
+    [...appState.trips.CairoGiza, ...appState.trips.Sharm, ...appState.trips.Luxor, ...appState.trips.Aswan].forEach(txt=>addH(txt));
+
+    // --- Accommodation (FillAccommodationData clone) - still kept though accommodation is USD now
+    function fillAccommodation(place, nights, price, rowIndex){
+      const ni = n(nights) || 0;
+      const pi = n(price) || 0;
+      if(ni>0 && pi>0){
+        set(ws, `B${rowIndex}`, `${ni} nights ${place}`);
+        set(ws, `C${rowIndex}`, ni * pi);
+      } else {
+        set(ws, `B${rowIndex}`, "");
+        set(ws, `C${rowIndex}`, "");
+      }
+    }
+    fillAccommodation("Cairo/Giza", appState.accommodation["Cairo/Giza"].nights, appState.accommodation["Cairo/Giza"].price, 10);
+    fillAccommodation("Sharm el Sheikh", appState.accommodation["Sharm el Sheikh"].nights, appState.accommodation["Sharm el Sheikh"].price, 11);
+    fillAccommodation("Luxor", appState.accommodation["Luxor"].nights, appState.accommodation["Luxor"].price, 12);
+    fillAccommodation("Aswan", appState.accommodation["Aswan"].nights, appState.accommodation["Aswan"].price, 13);
+    fillAccommodation("Hurghada", appState.accommodation["Hurghada"].nights, appState.accommodation["Hurghada"].price, 14);
+    fillAccommodation("Nile Cruise", appState.accommodation["Nile Cruise"].nights, appState.accommodation["Nile Cruise"].price, 15);
+
+    // --- Meals (WriteMealsData clone): J10/K10 downward, clear K to row 20 (meals in EGP)
+    let currentRowJ = 10, currentRowK = 10;
+    function writeMeals(mealCategory, mealsQuantityStr){
+      const q = n(mealsQuantityStr);
+      if(q && q>0){
+        set(ws, `J${currentRowJ}`, `${q} ${mealCategory} meals`);
+        set(ws, `K${currentRowK}`, q * n(mealCategory));
+        currentRowJ++; currentRowK++;
+      }
+    }
+    mealTiers.forEach(tier => writeMeals(tier, appState.meals[tier]));
+    for(let r=currentRowK; r<=20; r++) set(ws, `K${r}`, ""); // clear unused K
+
+    ensureRef(ws, 'A1', 'M40');
+
+    const wbout = XLSX.write(appState.workbook, { bookType:'xlsx', type:'array' });
+    const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (appState.quotationName || 'Quotation') + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ---------- Compute preview model (replicates Excel logic precisely, with required changes) ----------
   function computePreviewModel(){
+    // reset
     appState.preview.rows = [];
     appState.preview.accommodationRows = [];
     appState.preview.mealRows = [];
 
+    // read controls
     const uiPax = parseNumber($('#numPax').value);
     const workbookE3 = readCellA1(appState.sheetName, 'E3');
     const pax = uiPax || parseNumber(workbookE3) || 2;
@@ -630,49 +740,58 @@
     }
     if(!qDate) qDate = new Date();
 
+    // exchange rate input default fallback to 47.7
     const exRate = parseNumber($('#exchangeRate').value) || 47.7;
-    const thresholdDate = new Date(2025,10,1); // Nov 1 2025
 
-    // Accommodation rows (local price stored but convert to USD for display/subtotal)
+    const thresholdDate = new Date(2025,10,1); // nov 1 2025
+
+    // Accommodation rows B10..B15
     const accomOrder = ["Cairo/Giza","Sharm el Sheikh","Luxor","Aswan","Hurghada","Nile Cruise"];
     for(let i=0;i<accomOrder.length;i++){
       const place = accomOrder[i];
       const rowIndex = 10 + i;
+      // accommodation price now in USD inputs
       const nights = parseNumber(appState.accommodation[place].nights) || 0;
-      const priceLocal = parseNumber(appState.accommodation[place].price) || 0;
-      const totalLocal = (nights>0 && priceLocal>0) ? nights * priceLocal : "";
-      const totalUSD = (totalLocal==="" ? "" : Math.round((totalLocal) * 100)/100);
-      appState.preview.accommodationRows.push({ rowIndex, place, nights, priceLocal, totalLocal, totalUSD });
+      const priceUSD = parseNumber(appState.accommodation[place].price) || 0; // USD
+      const totalUSD = (nights>0 && priceUSD>0) ? Math.round((nights * priceUSD) * 10) / 10 : "";
+      // local (EGP) equivalent of accommodation if needed for display is not required (accom stays USD)
+      appState.preview.accommodationRows.push({ rowIndex, place, nights, priceUSD, totalUSD });
     }
 
-    // Meals rows
+    // Meals J/K (meals in EGP)
     let mealRowIndex = 10;
     for(const tier of mealTiers){
       const qty = parseNumber(appState.meals[tier]) || 0;
       if(qty>0){
-        const totalLocal = qty * Number(tier);
-        const totalUSD = Math.round((totalLocal / exRate) * 100)/100;
+        const totalLocal = qty * Number(tier); // EGP
+        const totalUSD = Math.round((totalLocal / exRate) * 10) / 10;
         appState.preview.mealRows.push({ rowIndex: mealRowIndex, tier: Number(tier), qty, totalLocal, totalUSD });
         mealRowIndex++;
       }
     }
 
-    // Build rows 10..40
+    // Build rows 10..40 base empty
     const rows = [];
     for(let r=10;r<=40;r++){
-      rows.push({ row:r, B:"", C_local:"", C_usd:"", D_usd:"", F:"", G_local:"", G_usd:"", H:"", I_local:"", I_usd:"", J:"", K_local:"", K_usd:"", M_local:"", M_usd:"" });
+      rows.push({
+        row:r,
+        B:"", C_usd:"", D_usd:"", // accom
+        F:"", G_local:"", G_usd:"", // sites/flight (local shown as EGP, subtotal USD)
+        H:"", I_local:"", I_usd:"", // transfers (local per pax shown EGP, I_usd is per pax USD)
+        J:"", K_local:"", K_usd:"", // meals (local EGP shown, subtotal USD)
+        L:"", M_local:"", M_usd:""  // guide fields if used
+      });
     }
 
-    // Fill accommodation into rows
+    // Fill accommodation into rows and compute D = 70% of accom USD
     for(const a of appState.preview.accommodationRows){
       const idx = a.rowIndex - 10;
       rows[idx].B = `${a.nights>0 ? a.nights + " nights " : ""}${a.place}`;
-      rows[idx].C_local = a.totalLocal === "" ? "" : a.totalLocal;
-      rows[idx].C_usd = a.totalUSD === "" ? "" : a.totalUSD;
-      rows[idx].D_usd = (a.totalUSD!=="" ? Math.round(a.totalUSD * 0.7 * 100)/100 : "");
+      rows[idx].C_usd = a.totalUSD !== "" ? a.totalUSD : "";
+      rows[idx].D_usd = (a.totalUSD !== "" ? Math.round(a.totalUSD * 0.7 * 10) / 10 : "");
     }
 
-    // Fill meals into rows (local + usd)
+    // Fill meals J/K (display local EGP in UI divisions; K_usd is USD)
     for(const m of appState.preview.mealRows){
       const idx = m.rowIndex - 10;
       rows[idx].J = `${m.qty} ${m.tier} meals`;
@@ -680,11 +799,14 @@
       rows[idx].K_usd = m.totalUSD;
     }
 
-    // F/G: flight ticket then sites
+    // Fill F/G list: flight ticket then sites in order
     const fList = [];
-    const ft = parseNumber(appState.flightTicket);
-    if(ft !== null && appState.flightTicket !== "") fList.push({ label: 'Flight Ticket', value: ft });
-    for(const s of appState.sites) fList.push({ label: s, value: null });
+    // flight ticket input is EGP (local) => convert to USD in G_usd for subtotal
+    const ftVal = parseNumber(appState.flightTicket);
+    if(ftVal !== null && appState.flightTicket !== "") {
+      fList.push({ label: 'Flight Ticket', local: ftVal });
+    }
+    for(const s of appState.sites) fList.push({ label: s, local: null });
 
     for(let i=0;i<fList.length;i++){
       const rowIndex = 10 + i;
@@ -692,16 +814,17 @@
       const entry = fList[i];
       rows[rowIndex - 10].F = entry.label;
       if(entry.label === 'Flight Ticket'){
-        rows[rowIndex - 10].G_local = entry.value !== null ? entry.value : "";
-        rows[rowIndex - 10].G_usd = entry.value !== null ? Number(entry.value) : "";
+        rows[rowIndex - 10].G_local = entry.local;
+        rows[rowIndex - 10].G_usd = (entry.local !== null && entry.local !== "" ? Math.round((entry.local / exRate) * 10) / 10 : "");
       } else {
+        // lookup site price (EGP)
         const sname = entry.label;
         const sl = appState.lookups.sites[sname];
         if(sl){
           const useAfter = (qDate >= thresholdDate);
           const priceLocal = useAfter ? (sl.after !== null ? sl.after : sl.before) : sl.before;
-          rows[rowIndex - 10].G_local = priceLocal === undefined ? "" : priceLocal;
-          rows[rowIndex - 10].G_usd = (priceLocal === "" || priceLocal === null || priceLocal === undefined) ? "" : Math.round((priceLocal / exRate) * 100)/100;
+          rows[rowIndex - 10].G_local = (priceLocal === undefined ? "" : priceLocal);
+          rows[rowIndex - 10].G_usd = (priceLocal === "" || priceLocal === null || priceLocal === undefined) ? "" : Math.round((priceLocal / exRate) * 10) / 10;
         } else {
           rows[rowIndex - 10].G_local = "";
           rows[rowIndex - 10].G_usd = "";
@@ -709,7 +832,7 @@
       }
     }
 
-    // Transfers H/I: build list from counters + checked trips
+    // Fill H/I transfers: build transfer list from counters and checked trips
     const hList = [];
     const cntApt = parseNumber(appState.cairoCounters.apt) || 0;
     for(let i=0;i<cntApt;i++) hList.push('Cairo apt');
@@ -717,6 +840,8 @@
     for(let i=0;i<cntFd;i++) hList.push('Cairo fd');
     const cntNight = parseNumber(appState.cairoCounters.night) || 0;
     for(let i=0;i<cntNight;i++) hList.push('Cairo night');
+
+    // add trips checked
     hList.push(...(appState.trips.CairoGiza||[]));
     hList.push(...(appState.trips.Sharm||[]));
     hList.push(...(appState.trips.Luxor||[]));
@@ -731,46 +856,66 @@
       const tr = appState.lookups.transfers[name];
       if(!tr){ rows[rowIndex - 10].I_local = ""; rows[rowIndex - 10].I_usd = ""; continue; }
       const useAfter = (qDate >= thresholdDate);
-      // prefer numeric arr; if after has nulls, fallback to before multiplied by header if needed (not implemented: uses numeric)
-      const arr = useAfter ? tr.after.map(v=>v===null?0:v) : tr.before;
+      const arrBefore = tr.before || [0,0,0];
+      const arrAfter = (tr.after && tr.after.map(v=>v===null?0:v)) || [null,null,null];
+      let arr = useAfter ? arrAfter : arrBefore;
+      // if arr has nulls and useAfter true, fallback to before values
+      if(useAfter && arr.every(v=>v===null)) arr = arrBefore;
+      // pick column by pax: <=7 -> idx 0, <=15 -> idx1 else idx2
       const idx = (pax <= 7 ? 0 : (pax <= 15 ? 1 : 2));
-      const localValue = arr[idx] || 0;
-      // per-person local
-      const perPersonLocal = (pax>0 ? (localValue / pax) : 0);
-      rows[rowIndex - 10].I_local = Math.round(perPersonLocal * 100)/100;
-      rows[rowIndex - 10].I_usd = Math.round((perPersonLocal / exRate) * 100)/100;
+      const localValue = arr[idx] || 0; // EGP total for that transfer
+      // transfers subtotal should be divided by number of pax (per person)
+      const perPersonLocal = (pax>0 ? Math.round((localValue / pax) * 10) / 10 : 0);
+      rows[rowIndex - 10].I_local = perPersonLocal;
+      rows[rowIndex - 10].I_usd = Math.round((perPersonLocal / exRate) * 10) / 10;
     }
 
-    // Guide extras - L/M handled like earlier: we map guide values into M_local/M_usd at specific rows (12/13)
+    // Guide extras L/M if present in state (guide inputs are EGP)
     const guideTicketVal = parseNumber(appState.guideTicket);
-    if(guideTicketVal !== null){ const idx = 12 - 10; rows[idx].M_local = guideTicketVal; rows[idx].M_usd = Math.round((guideTicketVal / exRate)*100)/100; }
-    const guideAccVal = parseNumber(appState.guideAccomodation);
-    if(guideAccVal !== null){ const idx = 13 - 10; rows[idx].M_local = guideAccVal; rows[idx].M_usd = Math.round((guideAccVal / exRate)*100)/100; }
+    if(guideTicketVal !== null){
+      const idx = 12 - 10;
+      rows[idx].L = "Guide Ticket";
+      rows[idx].M_local = guideTicketVal;
+      // guide ticket divided by pax and converted to USD
+      const perPaxLocal = pax>0 ? Math.round((guideTicketVal / pax) * 10) / 10 : 0;
+      rows[idx].M_usd = Math.round((perPaxLocal / (parseNumber($('#exchangeRate').value) || 47.7)) * 10) / 10;
+    }
 
+    const guideAccVal = parseNumber(appState.guideAccomodation);
+    if(guideAccVal !== null){
+      const idx = 13 - 10;
+      rows[idx].L = rows[idx].L || "";
+      rows[idx].M_local = guideAccVal;
+      // divide by pax and convert
+      const perPaxLocal = pax>0 ? Math.round((guideAccVal / pax) * 10) / 10 : 0;
+      rows[idx].M_usd = Math.round((perPaxLocal / (parseNumber($('#exchangeRate').value) || 47.7)) * 10) / 10;
+    }
+
+    // assign computed rows to preview
     appState.preview.rows = rows;
 
-    // compute subtotals (USD)
+    // compute per-section subtotals in USD (rounded to 1 decimal)
     let subtotalAccommodation = 0, subtotalSites = 0, subtotalTransfers = 0, subtotalMeals = 0, subtotalGuide = 0;
-    // accommodation USD from preview.accommodationRows
-    for(const a of appState.preview.accommodationRows){ if(a.totalUSD !== "") subtotalAccommodation += Number(a.totalUSD); }
-    // other subtotals from rows (for sites/meals/transfers/guide use USD fields)
+
+    // accommodation subtotal USD
+    for(const a of appState.preview.accommodationRows) if(a.totalUSD!=="" && a.totalUSD!==null) subtotalAccommodation += Number(a.totalUSD);
+
+    // iterate rows for other subtotals
     rows.forEach(r=>{
       if(r.F && r.F !== "Flight Ticket" && parseNumber(r.G_usd)!==null) subtotalSites += Number(r.G_usd);
-      if(r.I_usd && r.I_usd!=="") subtotalTransfers += Number(r.I_usd); // per-pax sum
+      if(r.F && r.F === "Flight Ticket" && parseNumber(r.G_usd)!==null) subtotalSites += Number(r.G_usd); // treat flight inside sites grouping
+      if(r.I_usd && r.I_usd!=="") subtotalTransfers += Number(r.I_usd); // these are per pax USD
       if(r.K_usd && r.K_usd!=="") subtotalMeals += Number(r.K_usd);
       if(r.M_usd && r.M_usd!=="") subtotalGuide += Number(r.M_usd);
-      // flight ticket G_usd if present: include as sites-like (we included earlier only non-flight; include flights too)
-      if(r.F && r.F === "Flight Ticket" && parseNumber(r.G_usd)!==null) subtotalSites += Number(r.G_usd);
     });
 
-    // rounding
-    subtotalAccommodation = Math.round(subtotalAccommodation*100)/100;
-    subtotalSites = Math.round(subtotalSites*100)/100;
-    subtotalTransfers = Math.round(subtotalTransfers*100)/100;
-    subtotalMeals = Math.round(subtotalMeals*100)/100;
-    subtotalGuide = Math.round(subtotalGuide*100)/100;
+    subtotalAccommodation = Math.round(subtotalAccommodation * 10) / 10;
+    subtotalSites = Math.round(subtotalSites * 10) / 10;
+    subtotalTransfers = Math.round(subtotalTransfers * 10) / 10;
+    subtotalMeals = Math.round(subtotalMeals * 10) / 10;
+    subtotalGuide = Math.round(subtotalGuide * 10) / 10;
 
-    const grand = Math.round((subtotalAccommodation + subtotalSites + subtotalTransfers + subtotalMeals + subtotalGuide) * 100)/100;
+    const grand = Math.round((subtotalAccommodation + subtotalSites + subtotalTransfers + subtotalMeals + subtotalGuide) * 10) / 10;
 
     appState.preview.summaryTotal = grand;
     appState.preview.subtotals = {
@@ -780,9 +925,12 @@
       meals: subtotalMeals,
       guide: subtotalGuide
     };
+
+    // single supplement (70% of accommodation subtotal in USD)
+    appState.preview.singleSupplement = Math.round((subtotalAccommodation * 0.7) * 10) / 10;
   }
 
-  // ---------- Render Review Page ----------
+  // ---------- Render Review Page with editable fields ----------
   function renderReviewPage(){
     $('#reviewQuoteTitle').textContent = appState.quotationName ? `— ${appState.quotationName}` : '';
     computePreviewModel();
@@ -790,154 +938,130 @@
     const detailDiv = $('#detailTables');
     detailDiv.innerHTML = '';
 
-    // Accommodation (USD rows)
+    // Accommodation
     const accomDiv = document.createElement('div');
-    accomDiv.innerHTML = `<h4 class="small">Accommodation (rows 10→15) — shown in <strong>USD</strong></h4>`;
+    accomDiv.innerHTML = `<h4 class="small">Accommodation (rows 10→15)</h4>`;
     const t1 = document.createElement('table');
     t1.innerHTML = `<thead><tr><th>Row</th><th>Place</th><th class="numCell">Total (USD)</th><th class="numCell">Calc D = 70% (USD)</th></tr></thead>`;
     const b1 = document.createElement('tbody');
     appState.preview.accommodationRows.forEach(a=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${a.rowIndex}</td>
-        <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${fmt(a.priceLocal)} (local)</div></td>
+        <td>${escapeHtml(a.place)} <div class="small muted">nights: ${a.nights} @ ${fmt(a.priceUSD)} (USD)</div></td>
         <td class="numCell"><input class="editable" data-path="accom:${a.place}:total" data-row="${a.rowIndex}" value="${a.totalUSD!==""?a.totalUSD:''}"></td>
-        <td class="numCell">${a.totalUSD!==""?fmt(Math.round(a.totalUSD*0.7*100)/100):''}</td>`;
+        <td class="numCell">${a.totalUSD!==""?fmt(Math.round(a.totalUSD*0.7*10)/10):''}</td>`;
       b1.appendChild(tr);
     });
     t1.appendChild(b1); accomDiv.appendChild(t1); detailDiv.appendChild(accomDiv);
 
-    // Sites & Flight Tickets (show EGP in rows)
-    const fDiv = document.createElement('div'); fDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G) — row values shown in <strong>EGP</strong></h4>`;
+    // Sites & Flight Tickets (F/G) - show local EGP values in divisions, but editable USD converted subtotal field
+    const fDiv = document.createElement('div'); fDiv.innerHTML = `<h4 class="small">Sites & Flight Tickets (F / G) — displayed in EGP</h4>`;
     const t2 = document.createElement('table');
-    t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (EGP)</th></tr></thead>`;
+    t2.innerHTML = `<thead><tr><th>Row</th><th>Label (F)</th><th class="numCell">Value (EGP)</th><th class="numCell">Value (USD) — subtotal</th></tr></thead>`;
     const b2 = document.createElement('tbody');
     rows.forEach(r=>{
       if(r.F && r.F !== ""){
-        const valueLocal = (r.G_local!==undefined && r.G_local!=="") ? r.G_local : "";
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${r.row}</td>
           <td>${escapeHtml(r.F)}</td>
-          <td class="numCell"><input class="editable" data-path="F_local:${r.row}" data-row="${r.row}" value="${valueLocal!==""?valueLocal:''}" /></td>`;
+          <td class="numCell">${r.G_local!==""?fmtNum(r.G_local):''}</td>
+          <td class="numCell"><input class="editable" data-path="F:${r.row}" data-row="${r.row}" value="${r.G_usd!==""?r.G_usd:''}" /></td>`;
         b2.appendChild(tr);
       }
     });
     t2.appendChild(b2); fDiv.appendChild(t2); detailDiv.appendChild(fDiv);
 
-    // Transfers (show EGP per pax in rows)
-    const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I) — row values shown in <strong>EGP per pax</strong></h4>`;
+    // Transfers (H/I)
+    const trDiv = document.createElement('div'); trDiv.innerHTML = `<h4 class="small">Transfers (H / I) — price per pax (EGP shown, USD per pax editable)</h4>`;
     const t3 = document.createElement('table');
-    t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price per pax (EGP)</th></tr></thead>`;
+    t3.innerHTML = `<thead><tr><th>Row</th><th>Transfer (H)</th><th class="numCell">Price per pax (EGP)</th><th class="numCell">Price per pax (USD)</th></tr></thead>`;
     const b3 = document.createElement('tbody');
     rows.forEach(r=>{
       if(r.H && r.H !== ""){
-        const vLocal = (r.I_local!==undefined && r.I_local!=="") ? r.I_local : "";
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${r.row}</td>
           <td>${escapeHtml(r.H)}</td>
-          <td class="numCell"><input class="editable" data-path="H_local:${r.row}" data-row="${r.row}" value="${vLocal!==""?vLocal:''}" /></td>`;
+          <td class="numCell">${r.I_local!==""?fmtNum(r.I_local):''}</td>
+          <td class="numCell"><input class="editable" data-path="H:${r.row}" data-row="${r.row}" value="${r.I_usd!==""?r.I_usd:''}" /></td>`;
         b3.appendChild(tr);
       }
     });
     t3.appendChild(b3); trDiv.appendChild(t3); detailDiv.appendChild(trDiv);
 
-    // Meals (show EGP in rows)
-    const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K) — row values shown in <strong>EGP</strong></h4>`;
+    // Meals (J/K)
+    const mealDiv = document.createElement('div'); mealDiv.innerHTML = `<h4 class="small">Meals (J / K) — displayed in EGP</h4>`;
     const t4 = document.createElement('table');
-    t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (EGP)</th></tr></thead>`;
+    t4.innerHTML = `<thead><tr><th>Row</th><th>Label (J)</th><th class="numCell">Total (EGP)</th><th class="numCell">Total (USD)</th></tr></thead>`;
     const b4 = document.createElement('tbody');
     rows.forEach(r=>{
       if(r.J && r.J !== ""){
-        const vLocal = (r.K_local!==undefined && r.K_local!=="") ? r.K_local : "";
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell"><input class="editable" data-path="J_local:${r.row}" data-row="${r.row}" value="${vLocal!==""?vLocal:''}" /></td>`;
+        tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.J)}</td><td class="numCell">${r.K_local!==""?fmtNum(r.K_local):''}</td><td class="numCell"><input class="editable" data-path="J:${r.row}" data-row="${r.row}" value="${r.K_usd!==""?r.K_usd:''}" /></td>`;
         b4.appendChild(tr);
       }
     });
     t4.appendChild(b4); mealDiv.appendChild(t4); detailDiv.appendChild(mealDiv);
 
-    // Guide (M local display)
-    const guideDiv = document.createElement('div'); guideDiv.innerHTML = `<h4 class="small">Guide Extras (local currency)</h4>`;
-    const t5 = document.createElement('table');
-    t5.innerHTML = `<thead><tr><th>Row</th><th>Item</th><th class="numCell">Value (EGP)</th></tr></thead>`;
-    const b5 = document.createElement('tbody');
+    // Guide displayed (EGP) and USD per pax editable
+    const guideDiv = document.createElement('div'); guideDiv.innerHTML = `<h4 class="small">Guide (EGP shown) — per pax USD shown</h4>`;
+    const tg = document.createElement('table');
+    tg.innerHTML = `<thead><tr><th>Row</th><th>Type</th><th class="numCell">Value (EGP)</th><th class="numCell">Per pax (USD)</th></tr></thead>`;
+    const gbody = document.createElement('tbody');
     rows.forEach(r=>{
-      if((r.M_local && r.M_local!=="") || (r.M_usd && r.M_usd!=="")){
-        const vLocal = r.M_local || "";
+      if(r.L && r.L !== "" && (r.M_local || r.M_local === 0)){
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r.row}</td><td>Guide Extra</td><td class="numCell"><input class="editable" data-path="M_local:${r.row}" data-row="${r.row}" value="${vLocal!==""?vLocal:''}" /></td>`;
-        b5.appendChild(tr);
+        tr.innerHTML = `<td>${r.row}</td><td>${escapeHtml(r.L)}</td><td class="numCell">${r.M_local!==""?fmtNum(r.M_local):''}</td><td class="numCell"><input class="editable" data-path="M:${r.row}" data-row="${r.row}" value="${r.M_usd!==""?r.M_usd:''}" /></td>`;
+        gbody.appendChild(tr);
       }
     });
-    t5.appendChild(b5); guideDiv.appendChild(t5); detailDiv.appendChild(guideDiv);
+    tg.appendChild(gbody); guideDiv.appendChild(tg); detailDiv.appendChild(guideDiv);
 
-    // Subtotals and grand total
+    // Summary and section subtotals
     $('#reviewSummary').textContent = `Grand total (USD): $ ${fmt(appState.preview.summaryTotal)}`;
     const subs = appState.preview.subtotals;
     $('#sectionSubtotals').innerHTML = `
       <div class="small">Accommodation subtotal (USD): <strong>$ ${fmt(subs.accommodation)}</strong></div>
       <div class="small">Sites subtotal (USD): <strong>$ ${fmt(subs.sites)}</strong></div>
-      <div class="small">Transfers subtotal (USD, per pax): <strong>$ ${fmt(subs.transfers)}</strong></div>
+      <div class="small">Transfers subtotal (USD per pax): <strong>$ ${fmt(subs.transfers)}</strong></div>
       <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subs.meals)}</strong></div>
-      <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subs.guide)}</strong></div>
+      <div class="small">Guide subtotal (USD per pax): <strong>$ ${fmt(subs.guide)}</strong></div>
     `;
+    $('#singleSupplement').innerHTML = `<div class="small">Single Supplement (70% of accommodation subtotal): <strong>$ ${fmt(appState.preview.singleSupplement)}</strong></div>`;
 
-    // Single Supplement = 70% of accommodation subtotal (USD)
-    const singleSupplementUSD = Math.round((subs.accommodation * 0.7) * 100)/100;
-    $('#singleSupplement').textContent = `Single Supplement (70% of accommodation subtotal): $ ${fmt(singleSupplementUSD)}`;
-
-    // Wire up edit handlers:
+    // wire up editable inputs
     Array.from(detailDiv.querySelectorAll('input.editable')).forEach(inp=>{
       inp.addEventListener('input', ()=>{
         const p = inp.dataset.path;
         const valRaw = inp.value.trim();
         const val = parseNumber(valRaw);
-        // For local edits (EGP) update *_local and rederive USD using exchange rate
-        const exRate = parseNumber($('#exchangeRate').value) || 47.7;
-
-        if(p.startsWith('F_local:')){
+        if(p.startsWith('F:')){
           const rowNum = Number(inp.dataset.row);
           const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-          if(rowObj){
-            rowObj.G_local = (val===null ? "" : val);
-            rowObj.G_usd = (val===null ? "" : Math.round((val / exRate)*100)/100);
-          }
-        } else if(p.startsWith('H_local:')){
+          if(rowObj) rowObj.G_usd = (val===null ? "" : Math.round(val * 10) / 10);
+        } else if(p.startsWith('H:')){
           const rowNum = Number(inp.dataset.row);
           const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-          if(rowObj){
-            rowObj.I_local = (val===null ? "" : val);
-            rowObj.I_usd = (val===null ? "" : Math.round((val / exRate)*100)/100);
-          }
-        } else if(p.startsWith('J_local:')){
+          if(rowObj) rowObj.I_usd = (val===null ? "" : Math.round(val * 10) / 10);
+        } else if(p.startsWith('J:')){
           const rowNum = Number(inp.dataset.row);
           const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-          if(rowObj){
-            rowObj.K_local = (val===null ? "" : val);
-            rowObj.K_usd = (val===null ? "" : Math.round((val / exRate)*100)/100);
-          }
-        } else if(p.startsWith('M_local:')){
+          if(rowObj) rowObj.K_usd = (val===null ? "" : Math.round(val * 10) / 10);
+        } else if(p.startsWith('M:')){
           const rowNum = Number(inp.dataset.row);
           const rowObj = appState.preview.rows.find(x=>x.row===rowNum);
-          if(rowObj){
-            rowObj.M_local = (val===null ? "" : val);
-            rowObj.M_usd = (val===null ? "" : Math.round((val / exRate)*100)/100);
-          }
+          if(rowObj) rowObj.M_usd = (val===null ? "" : Math.round(val * 10) / 10);
         } else if(p.startsWith('accom:')){
-          // accommodation input is in USD
+          // pattern: accom:PLACE:total -> the input is USD total for that accommodation row
           const rowIndex = Number(inp.dataset.row);
           const ac = appState.preview.accommodationRows.find(x=>x.rowIndex===rowIndex);
           if(ac){
-            const newUSD = (val===null ? "" : val);
+            const newUSD = (val===null ? "" : Math.round(val * 10) / 10);
             ac.totalUSD = newUSD;
-            // update rows:
+            // update matching rows preview
             const rowsRow = appState.preview.rows.find(x=>x.row===rowIndex);
-            if(rowsRow){
-              rowsRow.C_usd = newUSD;
-              rowsRow.D_usd = (newUSD!=="" ? Math.round(newUSD*0.7*100)/100 : "");
-            }
+            if(rowsRow){ rowsRow.C_usd = newUSD; rowsRow.D_usd = (newUSD!=="" ? Math.round(newUSD*0.7*10)/10 : ""); }
           }
         }
-        // recompute totals and refresh section subtotals & grand total text (but keep detail inputs as entered)
         recomputeSummaryAndRender();
       });
     });
@@ -946,44 +1070,42 @@
   }
 
   function recomputeSummaryAndRender(){
-    // recompute subtotals from current preview object
-    const exRate = parseNumber($('#exchangeRate').value) || 47.7;
-
-    let subsAcc = 0, subsSites = 0, subsTransfers = 0, subsMeals = 0, subsGuide = 0;
-
+    // recompute grand total from preview.rows using usd columns and from preview.accommodationRows and meals
+    let subsAcc = 0, subsSites=0, subsTransfers=0, subsMeals=0, subsGuide=0;
     appState.preview.accommodationRows.forEach(a=>{ if(a.totalUSD!=="" && a.totalUSD!==null) subsAcc += Number(a.totalUSD); });
+
     appState.preview.rows.forEach(r=>{
       if(r.G_usd && r.G_usd!=="") subsSites += Number(r.G_usd);
-      if(r.I_usd && r.I_usd!=="") subsTransfers += Number(r.I_usd); // per-pax sum
+      if(r.I_usd && r.I_usd!=="") subsTransfers += Number(r.I_usd);
       if(r.K_usd && r.K_usd!=="") subsMeals += Number(r.K_usd);
       if(r.M_usd && r.M_usd!=="") subsGuide += Number(r.M_usd);
     });
 
-    subsAcc = Math.round(subsAcc*100)/100;
-    subsSites = Math.round(subsSites*100)/100;
-    subsTransfers = Math.round(subsTransfers*100)/100;
-    subsMeals = Math.round(subsMeals*100)/100;
-    subsGuide = Math.round(subsGuide*100)/100;
+    subsAcc = Math.round(subsAcc * 10) / 10;
+    subsSites = Math.round(subsSites * 10) / 10;
+    subsTransfers = Math.round(subsTransfers * 10) / 10;
+    subsMeals = Math.round(subsMeals * 10) / 10;
+    subsGuide = Math.round(subsGuide * 10) / 10;
 
-    const total = Math.round((subsAcc + subsSites + subsTransfers + subsMeals + subsGuide) * 100)/100;
-
+    const total = Math.round((subsAcc + subsSites + subsTransfers + subsMeals + subsGuide) * 10) / 10;
     appState.preview.summaryTotal = total;
     appState.preview.subtotals = { accommodation: subsAcc, sites: subsSites, transfers: subsTransfers, meals: subsMeals, guide: subsGuide };
+    appState.preview.singleSupplement = Math.round(subsAcc * 0.7 * 10) / 10;
 
-    $('#reviewSummary').textContent = `Grand total (USD): $ ${fmt(total)}`;
+    $('#reviewSummary').textContent = `Grand total (USD): $ ${fmt(appState.preview.summaryTotal)}`;
     $('#sectionSubtotals').innerHTML = `
       <div class="small">Accommodation subtotal (USD): <strong>$ ${fmt(subsAcc)}</strong></div>
       <div class="small">Sites subtotal (USD): <strong>$ ${fmt(subsSites)}</strong></div>
-      <div class="small">Transfers subtotal (USD, per pax): <strong>$ ${fmt(subsTransfers)}</strong></div>
+      <div class="small">Transfers subtotal (USD per pax): <strong>$ ${fmt(subsTransfers)}</strong></div>
       <div class="small">Meals subtotal (USD): <strong>$ ${fmt(subsMeals)}</strong></div>
-      <div class="small">Guide subtotal (USD): <strong>$ ${fmt(subsGuide)}</strong></div>
+      <div class="small">Guide subtotal (USD per pax): <strong>$ ${fmt(subsGuide)}</strong></div>
     `;
-    const singleSupplementUSD = Math.round((subsAcc * 0.7) * 100)/100;
-    $('#singleSupplement').textContent = `Single Supplement (70% of accommodation subtotal): $ ${fmt(singleSupplementUSD)}`;
+    $('#singleSupplement').innerHTML = `<div class="small">Single Supplement (70% of accommodation subtotal): <strong>$ ${fmt(appState.preview.singleSupplement)}</strong></div>`;
   }
 
-  // ---------- Show Review button ----------
+  // ---------- Click "Show Review & Edit" ----------
   $('#downloadBtn').addEventListener('click', ()=>{
+    // store counters and trips
     appState.cairoCounters.apt   = $('#Cairoapt').value;
     appState.cairoCounters.fd    = $('#Cairofd').value;
     appState.cairoCounters.night = $('#CairoNight').value;
@@ -992,25 +1114,28 @@
     appState.trips.Luxor     = getChecked('#cbLuxorTrips');
     appState.trips.Aswan     = getChecked('#cbAswanTrips');
 
+    // recalc preview & render
     renderReviewPage();
   });
 
   $('#backToSteps').addEventListener('click', ()=> showStep(4));
 
-  // apply edits -> push accommodation totals back to form prices (local)
+  // apply edits: pushes accommodation price changes into appState.accommodation.price if nights>0 (accommodation price is USD)
   $('#applyEdits').addEventListener('click', ()=>{
     let changes = 0;
     const exRate = parseNumber($('#exchangeRate').value) || 47.7;
     appState.preview.accommodationRows.forEach(ac=>{
-      const newUSD = parseNumber(ac.totalUSD);
-      if(newUSD !== null && ac.nights > 0){
-        const newLocalTotal = Math.round((newUSD * exRate) * 100)/100;
-        const newPriceLocal = Math.round((newLocalTotal / ac.nights) * 100)/100;
-        appState.accommodation[ac.place].price = String(newPriceLocal);
+      const rowsRow = appState.preview.rows.find(x=>x.row===ac.rowIndex);
+      const newTotalUSD = parseNumber(ac.totalUSD);
+      if(newTotalUSD !== null && ac.nights>0){
+        // compute new price USD per night
+        const newPriceUSD = Math.round((newTotalUSD / ac.nights) * 10) / 10;
+        appState.accommodation[ac.place].price = String(newPriceUSD);
         changes++;
       }
     });
-    // reflect into selects
+    alert(`Applied edits to state: updated ${changes} accommodation prices (reflected in the form). Preview refreshed.`);
+    // reflect into selects (if option missing we append)
     const map = {
       'ddlPriceCairoGiza': 'Cairo/Giza',
       'ddlPriceSharm': 'Sharm el Sheikh',
@@ -1024,21 +1149,21 @@
       const sel = document.getElementById(id);
       if(!sel) return;
       const newPrice = appState.accommodation[place].price;
-      // if option exists set; otherwise append
-      let opt = Array.from(sel.options).find(o => o.value === String(newPrice));
-      if(!opt){
-        opt = document.createElement('option'); opt.value = String(newPrice); opt.text = String(newPrice);
-        sel.appendChild(opt);
+      if(newPrice!==undefined){
+        let opt = Array.from(sel.options).find(o => o.value === String(newPrice));
+        if(!opt){
+          opt = document.createElement('option'); opt.value = String(newPrice); opt.text = String(newPrice);
+          sel.appendChild(opt);
+        }
+        sel.value = String(newPrice);
       }
-      sel.value = String(newPrice);
     });
-
-    alert(`Applied edits to state: updated ${changes} accommodation prices (local currency).`);
+    // recompute and re-render
     computePreviewModel();
     renderReviewPage();
   });
 
-  // small init
+  // ---------- Small init (no defaults forced) ----------
   (function init(){ /* nothing forced */ })();
 
   </script>
